@@ -165,10 +165,9 @@ class FileResource(object):
 
     @staticmethod
     def template(config):
-        return {
-            "download": config.get("FLASK_APP_DOWNLOAD_FOLDER", None),
-            "template": config.get("FLASK_APP_TEMPLATE_NAME", None),
-        }
+        download = config.get("FLASK_APP_DOWNLOAD_FOLDER", None)
+        template = config.get("FLASK_APP_TEMPLATE_NAME", None)        
+        return download, template
 
     @staticmethod
     def upload(folder, resource):

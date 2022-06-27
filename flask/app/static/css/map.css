@@ -48,3 +48,14 @@ body {
     margin-left: 2%;
     margin-right: 2%;
 }
+
+.custom-file-label::after {
+    text-align: left;    
+}
+.custom-file-label::after {
+    left: auto;
+    right: 0;
+    border-left-width: 0;
+    border-right: inherit;
+}
+.navbar { padding-left: 0px; }

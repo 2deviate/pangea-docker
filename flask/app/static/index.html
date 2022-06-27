@@ -10,20 +10,20 @@
 
 <body>
 
-<nav class="navbar navbar-light bg-light">
-    <div class="container-fluid">
+<nav class="navbar navbar-light bg-light">    
+    <div class="container-fluid" style="padding-right: 0px;">
         <form class="form-inline" id="search" role="search">
             <div class="input-group mb-3">
                 <input type="text" class="form-control" placeholder="Exchange, Town, Postcode or Telephone" style="width: 330px;" name="query">
                 <div class="input-group-append">                
                     <button class="btn btn-outline-secondary" type="submit">Search</button>
                     <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="sr-only">Toggle Dropdown</span>
+                        <span class="sl-only">Files</span>
                     </button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" data-toggle="modal" data-target="#uploadFileDialog">Upload Files...</a>
+                    <div class="dropdown-menu dropdown-menu-right">                        
+                        <a class="dropdown-item" data-toggle="modal" data-target="#uploadFileDialog">Upload File...</a>
                         <div role="separator" class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="javascript:downloadFile()">Download Template</a>                        
+                        <a class="dropdown-item" href="javascript:downloadFile()">Download Template</a>                                                
                     </div>              
                 </div>
             </div>

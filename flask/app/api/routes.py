@@ -33,28 +33,28 @@ api.add_resource(
 )
 
 # Openreach FTTP API - fetches decommisioned exchange data based on lookup site, name, code and location
-# http://localhost:5000/api/v1.0/pangea/fttp/exchange/site/5
+# http://localhost/api/v1.0/pangea/fttp/exchange/site/5
 api.add_resource(
     FttpExchangeAPI,
     "/v1.0/pangea/fttp/exchange/site/<site_no>",
     methods=["GET"],
     endpoint="site",
 )
-# http://localhost:5000/api/v1.0/pangea/fttp/exchange/name/Failsworth
+# http://localhost/api/v1.0/pangea/fttp/exchange/name/Failsworth
 api.add_resource(
     FttpExchangeAPI,
     "/v1.0/pangea/fttp/exchange/name/<exchange_name>",
     methods=["GET"],
     endpoint="name",
 )
-# http://localhost:5000/api/v1.0/pangea/fttp/exchange/code/NICTY
+# http://localhost/api/v1.0/pangea/fttp/exchange/code/NICTY
 api.add_resource(
     FttpExchangeAPI,
     "/v1.0/pangea/fttp/exchange/code/<exchange_code>",
     methods=["GET"],
     endpoint="code",
 )
-# http://localhost:5000/api/v1.0/pangea/fttp/exchange/location/Belfast
+# http://localhost/api/v1.0/pangea/fttp/exchange/location/Belfast
 api.add_resource(
     FttpExchangeAPI,
     "/v1.0/pangea/fttp/exchange/location/<exchange_location>",
@@ -63,14 +63,14 @@ api.add_resource(
 )
 
 # Sam Exchange API - searches sam knows api (curl) for exchange related data
-# http://localhost:5000/api/v1.0/pangea/sam/exchange/info?query=London
-# http://localhost:5000/api/v1.0/pangea/sam/exchange/info?exchange_code=WSKIL
+# http://localhost/api/v1.0/pangea/sam/exchange/info?query=London
+# http://localhost/api/v1.0/pangea/sam/exchange/info?exchange_code=WSKIL
 api.add_resource(
     SamExchangeAPI, "/v1.0/pangea/sam/exchange/info", methods=["GET"], endpoint="info"
 )
 
 # Decommission Exchange API - searches sam knows api (curl) for exchange related data
-# http://localhost:5000/api/v1.0/pangea/decommission/exchange/search?query=morley
+# http://localhost/api/v1.0/pangea/decommission/exchange/search?query=morley
 api.add_resource(
     DecommissionExchangeAPI,
     "/v1.0/pangea/decommission/exchange/search",
@@ -79,25 +79,25 @@ api.add_resource(
 )
 
 # Geolocation API - searches geolocations for location data given a location
-# http://localhost:5000/api/v1.0/pangea/location/search?postcode=BR33RF
+# http://localhost/api/v1.0/pangea/location/search?postcode=BR33RF
 api.add_resource(
     LocationAPI, "/v1.0/pangea/location/search", methods=["GET"], endpoint="postcode"
 )
 
 # Download API - downloads template for bulk queries
-# http://localhost:5000/api/v1.0/pangea/download/template
+# http://localhost/api/v1.0/pangea/download/template
 api.add_resource(
     DownloadAPI, "/v1.0/pangea/download/template", methods=["GET"], endpoint="template"
 )
 
 # Upload API - uploads template for bulk queries
-# http://localhost:5000/api/v1.0/pangea/upload/file/{form}
+# http://localhost/api/v1.0/pangea/upload/file/{form}
 api.add_resource(
     UploadAPI, "/v1.0/pangea/upload/file", methods=["POST"]
 )
 
 # Recommendation API - recommends a product based on usage
-# http://localhost:5000/api/v1.0/pangea/recommendation/product/usage?limit=130
+# http://localhost/api/v1.0/pangea/recommendation/product/usage?limit=130
 api.add_resource(
     RecommendationAPI, "/v1.0/pangea/recommendation/product/usage", methods=["GET"], endpoint="usage"    
 )

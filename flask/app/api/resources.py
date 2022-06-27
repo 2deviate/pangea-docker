@@ -7,6 +7,7 @@ Category: None
 """
 # third-party imports
 import os
+import logging
 from flask import flash, redirect, request
 from flask_restful import Resource, reqparse
 from flask import current_app, safe_join, send_from_directory
@@ -33,6 +34,7 @@ from app.api.schemas import (
 )
 from app.utils import response_json
 
+logger = logging.getLogger(__name__)
 
 class FttpExchangesAPI(Resource):
     """
@@ -258,13 +260,14 @@ class DownloadAPI(Resource):
 
     def get(self):
         config = self.config
-        results = FileResource.template(config)
-
-        if results:
-            download_path = results["download"]
-            template_name = results["template"]
-            directory = safe_join(current_app.root_path, download_path)
-            return send_from_directory(directory=directory, path=template_name)
+        download, template = FileResource.template(config)
+        try:
+            if download and template:            
+                directory = safe_join(current_app.root_path, download)
+                return send_from_directory(directory=directory, path=template)
+        except Exception as ex:
+            logger.error(f"error downloading, {download=}, {template=}", ex)
+            pass
 
     def post(self):
         pass
