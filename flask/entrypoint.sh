@@ -3,7 +3,7 @@
 case $1 in
 
   server)
-    sudo /usr/sbin/crond -f -l 0 -L /var/log/cron.log &
+    sudo -E /usr/sbin/crond -f -l 0 -L /var/log/cron.log &
     gunicorn --workers 5 -t 60 -b 0.0.0.0:8000 wsgi:app
   ;;
 
