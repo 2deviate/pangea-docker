@@ -1,0 +1,10 @@
+**/*.git
+**/*.pyc
+**/*.log
+**/*.csv
+**/*.json
+**/*.DS_Store
+
+**/venv
+**/node_modules
+**/__pycache__

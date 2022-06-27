@@ -1,0 +1,90 @@
+services:
+  db:
+    build: mysql
+    image: 2deviate/pangea-db:v1.0
+    ports: 
+      - '3306:3306'
+    cap_add:
+      - SYS_NICE
+    environment:
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - MYSQL_DATABASE
+      - MYSQL_HOST
+      - MYSQL_PORT
+    command: '--default-authentication-plugin=mysql_native_password'
+    volumes:
+      - db-data:/var/lib/mysql
+    restart: always
+    networks:
+      - backend  
+  server:
+    build: flask
+    image: 2deviate/pangea-server:v1.0
+    command: 'server'
+    ports: 
+      - '8000:8000'
+    networks:
+      - frontend
+      - backend
+    environment:
+      - LOGFILENAME
+      - LOGLEVEL
+      - FLASK_APP
+      - FLASK_ENV            
+      - FLASK_HOST      
+      - FLASK_PORT
+      - FLASK_DEBUG
+      - FLASK_APP_TEMPLATE_NAME
+      - FLASK_APP_UPLOAD_FOLDER
+      - FLASK_APP_DOWNLOAD_FOLDER 
+      - FLASK_FILE_UPLOAD_MAX_LENGTH     
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - MYSQL_DATABASE
+      - MYSQL_HOST
+      - MYSQL_PORT      
+      - DOCKER_DB_NAME
+      - DOCKER_SERVER_NAME
+      - DOCKER_PROXY_NAME
+      - GOOGLE_MAPS_API_KEY         
+      - SMTP_USER
+      - SMTP_PASSWORD
+      - SMTP_HOST
+      - SMTP_PORT
+      - EMAIL_FROM_ADDRESS
+      - EMAIL_CC_ADDRESSES
+      - EMAIL_ATTACHMENT
+      - EMAIL_SUBJECT
+      - EMAIL_TEMPLATE_SCHEMA
+      - PROXY_SERVER
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:8000/flask-health-check || exit 1"]
+      interval: 60s
+      timeout: 60s
+      retries: 3    
+  proxy:
+    build: nginx
+    image: 2deviate/pangea-proxy:v1.0
+    restart: always
+    volumes:
+      - ./nginx/default.conf:/tmp/default.conf
+    environment: 
+      - PROXY_SERVER
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:80/health-check || exit 1"]
+      interval: 60s
+      timeout: 60s
+      retries: 3
+    command: /app/setup.sh
+    networks:
+      - frontend
+volumes:
+  db-data:
+networks:
+  backend:
+  frontend:  
