@@ -20,6 +20,7 @@ from .resources import (
     DownloadAPI,
     UploadAPI,
     RecommendationAPI,
+    AllocationAPI
 )
 
 # pylint: disable=invalid-name
@@ -100,5 +101,12 @@ api.add_resource(
 # http://localhost/api/v1.0/pangea/recommendation/product/usage?limit=130
 api.add_resource(
     RecommendationAPI, "/v1.0/pangea/recommendation/product/usage", methods=["GET"], endpoint="usage"    
+)
+
+# Resource API - resource allocations, de-allocations
+# http://localhost/api/v1.0/pangea/resource/db/query?sql='select count(*) from file_stage;'
+# http://localhost:5000/api/v1.0/pangea/resource/db/query?sql='select count(*) from file_stage;'
+api.add_resource(
+    AllocationAPI, "/v1.0/pangea/resource/db/query", methods=["GET"], endpoint="query"    
 )
 

@@ -23,6 +23,7 @@ FILE_STATUS_NEW = "New"
 FILE_STATUS_UPLOAD = "Upload"
 FILE_STATUS_PROCESS = "Process"
 FILE_STATUS_NOTIFY = "Notify"
+FILE_STATUS_SENT = "Sent"
 FILE_STATUS_COMPLETE = "Complete"
 FILE_STATUS_EXCEPTION = "Exception"
 
@@ -51,6 +52,8 @@ SP_INSERT_FILE_QUERY = "sp_insert_file_query"
 
 SP_GET_UPLOADED_FILES = "sp_get_uploaded_files"
 SP_GET_RECOMMENDATIONS = "sp_get_recommendations"
+
+SP_EXECUTE_SQL = "sp_execute_sql"
 
 # ------------ Email Templates -------------------
 

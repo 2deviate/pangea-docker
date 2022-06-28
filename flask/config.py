@@ -6,17 +6,19 @@ Notifyees: craig@2deviate.com
 Category: None
 """
 
-import logging
 import os
+import json
+import logging
 
 basedir = os.path.abspath(os.path.dirname(__file__))  # pylint: disable=invalid-name
+
+logger = logging.getLogger(__name__)
 
 
 class Config(object):
     """
     Common configurations
     """
-
     # Should not be part of environment
     SECRET_KEY = os.getenv("SECRET_KEY", None)
 
@@ -63,6 +65,10 @@ class Config(object):
     EMAIL_CC_ADDRESSES = os.getenv("EMAIL_CC_ADDRESSES", None)
     EMAIL_ATTACHMENT = os.getenv("EMAIL_ATTACHMENT", None)
     EMAIL_SUBJECT = os.getenv("EMAIL_SUBJECT", None)
+
+    ### Email Content
+    EMAIL_TEMPLATE_TEXT = os.getenv("EMAIL_TEMPLATE_TEXT", None)
+    EMAIL_TEMPLATE_HTML = os.getenv("EMAIL_TEMPLATE_HTML", None)
     
     DEFAULT_TEMPLATE_SCHEMA = {
             "client_id": "Client ID",
@@ -78,7 +84,14 @@ class Config(object):
             "exchange_product_price": "Price (GBP)",
             "created_at": "Created At"
     }
-    EMAIL_TEMPLATE_SCHEMA = os.getenv("EMAIL_TEMPLATE_SCHEMA", DEFAULT_TEMPLATE_SCHEMA)
+    
+    schema = os.getenv("EMAIL_TEMPLATE_SCHEMA", None)
+    if schema and isinstance(schema, str):
+        try:
+            EMAIL_TEMPLATE_SCHEMA = json.loads(schema)
+        except json.JSONDecodeError as err:
+            logger.error(f"Failed to parse template {schema=}, defaulting {DEFAULT_TEMPLATE_SCHEMA=}", err)
+            EMAIL_TEMPLATE_SCHEMA = DEFAULT_TEMPLATE_SCHEMA    
         
     PROXY_SERVER = os.getenv("PROXY_SERVER", None)
 

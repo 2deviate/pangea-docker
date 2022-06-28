@@ -61,6 +61,7 @@ In this example a t2.micro aws EC2 instance is setup via the EC2 dashboard.  See
     FLASK_PORT                      - Flask Port
     FLASK_HOST                      - Flask Host
     FLASK_DEBUG                     - Flask Debug
+    USE_X_SENDFILE                  - Flask send file, set True as default 
     FLASK_APP_TEMPLATE_NAME         - Flask App template used for
     FLASK_APP_UPLOAD_FOLDER         - Flask file upload folder path
     FLASK_APP_DOWNLOAD_FOLDER       - Flask file download folder path
@@ -68,8 +69,9 @@ In this example a t2.micro aws EC2 instance is setup via the EC2 dashboard.  See
     MYSQL_USER                      - MySql user name
     MYSQL_PASSWORD                  - MySql user password
     MYSQL_HOST                      - MySql server host address
-    MYSQL_PORT                      - MySql server port no.
+    MYSQL_PORT                      - MySql server port no    
     MYSQL_DATABASE                  - MySql database name
+    MYSQL_ROOT_PASSWORD             - MySql root password (*required)
     DOCKER_DB_NAME                  - Docker default database name (service)
     DOCKER_SERVER_NAME              - Docker default server name (service)
     DOCKER_PROXY_NAME               - Docker default proxy name (service)
@@ -82,6 +84,8 @@ In this example a t2.micro aws EC2 instance is setup via the EC2 dashboard.  See
     EMAIL_CC_ADDRESSES              - Email cc address(es)
     EMAIL_ATTACHMENT                - Email attachement
     EMAIL_SUBJECT                   - Email subject
+    EMAIL_TEMPLATE_TEXT             - Email body text
+    EMAIL_TEMPLATE_HTML             - Email HTML (defaults to Table)
     EMAIL_TEMPLATE_SCHEMA           - Email template Schema (table column headers)
     PROXY_SERVER                    - Proxy server address e.g. 8000:server
 

@@ -306,3 +306,14 @@ BEGIN
     SET file_query_id = LAST_INSERT_ID();
 END$$
 DELIMITER ;
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS sp_execute_sql;
+CREATE PROCEDURE sp_execute_sql(IN theSQL VARCHAR(4096))
+BEGIN
+    SET @theSQL = theSQL;
+    PREPARE dynamic_statement FROM @theSQL;
+    EXECUTE dynamic_statement;
+    DEALLOCATE PREPARE dynamic_statement;    
+END$$
+DELIMITER ;

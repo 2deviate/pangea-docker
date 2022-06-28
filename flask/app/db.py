@@ -77,5 +77,5 @@ class MySql(object):
                     return results, param_vals
                 except Exception as err:
                     logger.error(err, exc_info=err)
-                    raise err
+                    raise
 db = MySql()

@@ -17,7 +17,7 @@ from .map import maps
 
 
 def create_app(config):
-    app = Flask(__name__, static_url_path='/static/')
+    app = Flask(__name__, static_url_path="/static/")
     # setup serializers
     ma = Marshmallow(app)
     # load configurations

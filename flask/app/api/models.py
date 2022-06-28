@@ -14,12 +14,10 @@ import logging
 import phonenumbers
 import datetime
 import app.constants as const
-from decimal import Decimal
 from dateutil import parser
 from app.sam import sam
 from app.map import maps
 from app.db import db
-from pymysql import NULL
 from ukpostcodeutils import validation
 from werkzeug.utils import secure_filename
 
@@ -199,28 +197,38 @@ class FileStage(object):
         
     class Row(object):
         def __init__(self, *args) -> None:
-            self.client_id = args[0] if args[0] else None
-            self.exchange_name = args[1] if args[1] else None
-            self.exchange_code = args[2] if args[2] else None
-            self.exchange_post_code = args[3] if args[3] else None
-            self.avg_data_usage = args[4] if args[4] else None
-            self.file_stage_fk = args[5] if args[5] else None
-            # implemented place holder fields
-            self.stop_sell_date = None
-            self.exchange_product_fk = None            
+            try:
+                self.client_id = args[0] if args[0] else None
+                self.exchange_name = args[1] if args[1] else None
+                self.exchange_code = args[2] if args[2] else None
+                self.exchange_post_code = args[3] if args[3] else None
+                self.avg_data_usage = args[4] if args[4] else None
+                self.file_stage_fk = args[5] if args[5] else None
+                # implemented place holder fields
+                self.stop_sell_date = None
+                self.exchange_product_fk = None
+            except Exception as err:
+                logger.error(f"Row init exception,", err)
+                raise
 
         def values(self):
             client_id = str(self.client_id) if self.client_id else None
             exchange_name = str(self.exchange_name) if self.exchange_name else None
             exchange_code = str(self.exchange_code) if self.exchange_code else None
             exchange_post_code = str(self.exchange_post_code) if self.exchange_post_code else None
-            avg_data_usage = int(self.avg_data_usage) if self.avg_data_usage else None
+            
+            try:
+                avg_data_usage = int(self.avg_data_usage) if self.avg_data_usage else 0
+            except ValueError:
+                logger.error(f"Unable to parse, {avg_data_usage=}", err)
+                pass                
             
             stop_sell_date = None
             try:
                 if self.stop_sell_date or self.stop_sell_date is not None:
                     stop_sell_date = (parser.parse(self.stop_sell_date).date().strftime("""%Y-%m-%d"""))
             except parser.ParserError as err:
+                logger.error(f"Unable to parse, {stop_sell_date=}", err)
                 pass                
             
             file_stage_fk = int(self.file_stage_fk) if self.file_stage_fk else None             
@@ -234,6 +242,7 @@ class FileStage(object):
 
     @staticmethod
     def insert(email, filename):
+        logger.info(f"Processing file for insert into db, {email=}, {filename=}")
         if email and os.path.exists(filename):            
             file_path = os.path.dirname(filename)
             file_name = os.path.basename(filename)
@@ -242,14 +251,18 @@ class FileStage(object):
             file_modified_date = datetime.datetime.fromtimestamp(modified_date)
             
             # insert file stage record            
+            proc = const.SP_INSERT_FILE_STAGE
             args = (email, file_name, file_path, file_size, file_modified_date, file_stage_status, None)
-            _, params = db.execute(const.SP_INSERT_FILE_STAGE, *args)
+            logger.info(f"Insert call, {proc=}, {args=}")
+            _, params = db.execute(proc, *args)
             # unpack params for file_stage_id
             *_, file_stage_id = params
             
             # insert bulk query record from csv
             if file_stage_id:
-                try:                   
+                try:
+                    proc = const.SP_INSERT_FILE_QUERY
+                    logger.info(f"Open file, {filename=}")
                     with open(filename) as f:
                         csv_reader = csv.reader(f, delimiter=",")
                         line_count = 0
@@ -258,17 +271,51 @@ class FileStage(object):
                             if line_count == 1:
                                 continue
                             if line:
+                                logger.info(f"Inserting Row, {line=}")
                                 row_obj = FileStage.Row(*line, file_stage_id)
+                                
                                 args = row_obj.values()
                                 
-                                _ , params = db.execute(const.SP_INSERT_FILE_QUERY, *args, None)
+                                logger.info(f"Insert call, {proc=}, {args=}")
+                                _ , params = db.execute(proc, *args, None)                    
 
                 except Exception as err:
-                    logger.error(f"Unable to load file {filename}", err)
+                    logger.error(f"Unable to import file into db {filename=}", err)
+                    proc = const.SP_UPDATE_FILE_STAGE_STATUS
+                    args = file_stage_id, const.FILE_STATUS_EXCEPTION
+                    logger.info(f"Updating status, {proc=}, {args=}")
+                    db.execute(proc, *args)
                     raise
+                finally:                    
+                    # completed importing, remove temp file
+                    try:
+                        os.remove(filename)
+                    except Exception as err:
+                        logger.error(f"Unable to delete temp file {filename=}", err)
+                        proc = const.SP_UPDATE_FILE_STAGE_STATUS
+                        args = file_stage_id, const.FILE_STATUS_EXCEPTION
+                        logger.info(f"Updating status, {proc=}, {args=}")
+                        db.execute(proc, *args)
+                        raise
 
     @staticmethod
     def get_resource_attributes(filename):
         if filename and os.path.exists(filename):
             stats = os.stat(filename)
             return stats.st_size, stats.st_mtime
+
+
+class Allocation(object):
+    """
+    This class represents an simple resource allocation
+    """
+
+    def __init__(self, **kwargs):
+        self.sql = kwargs.get("sql", None)
+
+    def __repr__(self):
+        return "<sql: {}>".format(self.sql)
+
+    @staticmethod
+    def execute_sql(sql):
+        return db.execute(const.SP_EXECUTE_SQL, sql)   

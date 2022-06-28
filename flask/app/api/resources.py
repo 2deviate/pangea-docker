@@ -8,19 +8,21 @@ Category: None
 # third-party imports
 import os
 import logging
-from flask import flash, redirect, request
+import pandas
+from flask import redirect, request
 from flask_restful import Resource, reqparse
 from flask import current_app, safe_join, send_from_directory
 
 # local imports
 from app import constants
-from .models import (
+from .models import (    
     FttpExchange,
     Product,
     SamExchange,
     Location,
     FileResource,
     FileStage,
+    Allocation,
 )
 from app.api.schemas import (
     decommissions_exchange_schema,
@@ -263,7 +265,9 @@ class DownloadAPI(Resource):
         download, template = FileResource.template(config)
         try:
             if download and template:            
-                directory = safe_join(current_app.root_path, download)
+                directory = safe_join(current_app.root_path, download) # running locally                
+                #directory = safe_join(os.getcwd(), download) # running in docker container https://stackoverflow.com/questions/53725478/download-file-from-flask-application-running-in-docker-container
+                logger.info(f"downloading path, {download=}, {template=}, {directory}=")
                 return send_from_directory(directory=directory, path=template)
         except Exception as ex:
             logger.error(f"error downloading, {download=}, {template=}", ex)
@@ -342,6 +346,34 @@ class RecommendationAPI(Resource):
     def post(self):
         pass
 
+
+class AllocationAPI(Resource):
+    """
+    This API represents a resource allocation API
+    """
+
+    def __init__(self):
+        self.parser = reqparse.RequestParser()  # pylint: disable=invalid-name
+        self.parser.add_argument("sql", type=str)
+        super(AllocationAPI, self).__init__()
+
+    def get(self):
+        args = self.parser.parse_args()
+        sql = args["sql"]
+
+        if not (sql):
+            return response_json(True, {}, constants.QUERY_MISSING_PARAMS)
+
+        results, _ = Allocation.execute_sql(sql)
+
+        if results:
+            df = pandas.DataFrame(results)
+            return response_json(True, df.to_json(), constants.DATA_OPERATION_SUCCESSFUL)
+        
+        return response_json(True, results, constants.DATA_OPERATION_SUCCESSFUL)
+
+    def post(self):
+        pass
 
 def serialize_product(product):
     return {

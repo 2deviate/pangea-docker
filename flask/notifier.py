@@ -45,11 +45,16 @@ email_from_address = None
 email_cc_address = None
 email_attachment = None
 email_subject = None
+
 smtp_user = None
 smtp_password = None
 smtp_host = None
 smtp_port = None
+
+email_template_text = None
+email_template_html = None
 email_template_schema = None
+
 
 def get_data(method, url=None, headers=None, body=None, **attrs):
     result = None
@@ -70,35 +75,33 @@ def get_data(method, url=None, headers=None, body=None, **attrs):
 
 def send_mail(from_addr, to_addrs, cc_addrs, df):
 
-    text = "Pangea bulk query results"
-    html = df.to_html(index=False)
+    text = email_template_text
+    html = email_template_html if email_template_html else df.to_html(index=False)
 
-    text_part = MIMEText(text, 'plain')
-    html_part = MIMEText(html, 'html')
+    text_part = MIMEText(text, "plain")
+    html_part = MIMEText(html, "html")
 
-    msg_alternative = MIMEMultipart('alternative')
+    msg_alternative = MIMEMultipart("alternative")
     msg_alternative.attach(text_part)
     msg_alternative.attach(html_part)
 
-    tmp = tempfile.NamedTemporaryFile(suffix=".csv", delete=False)
-    logger.error(f"created tmpfile {tmp.name=}")
-    
-    df.to_csv(tmp, index=False)
-    
-    fp=open(tmp.name,'rb')
-    attachment = MIMEApplication(fp.read(),_subtype="csv")
-    fp.close()
-
-    attachment.add_header('Content-Disposition', 'attachment', filename=tmp.name)
-
-    msg_mixed = MIMEMultipart('mixed')
+    msg_mixed = MIMEMultipart("mixed")
     msg_mixed.attach(msg_alternative)
-    msg_mixed.attach(attachment)
-    
-    msg_mixed['From'] = from_addr
-    msg_mixed['To'] = "".join(to_addrs) if isinstance(to_addrs, list) else to_addrs
-    msg_mixed['CC'] = ",".join(cc_addrs) if isinstance(cc_addrs, list) else cc_addrs
-    msg_mixed['Subject'] = email_subject
+
+    if not df.empty:
+        with tempfile.NamedTemporaryFile(suffix=".csv") as tmp:            
+            logger.error(f"created tmpfile {tmp.name=}")                
+            df.to_csv(tmp, index=False)
+            fp = open(tmp.name, "rb")
+            attachment = MIMEApplication(fp.read(), _subtype="csv")
+            fp.close()
+            attachment.add_header("Content-Disposition", "attachment", filename=tmp.name)    
+            msg_mixed.attach(attachment)
+
+    msg_mixed["From"] = from_addr
+    msg_mixed["To"] = "".join(to_addrs) if isinstance(to_addrs, list) else to_addrs
+    msg_mixed["CC"] = ",".join(cc_addrs) if isinstance(cc_addrs, list) else cc_addrs
+    msg_mixed["Subject"] = email_subject
 
     try:
         smtp_obj = smtplib.SMTP_SSL(host=smtp_host, port=smtp_port)
@@ -108,7 +111,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, df):
         smtp_obj.quit()
     except Exception as err:
         logger.error(err, exc_info=err)
-        raise err
+        raise
 
 
 def normalize_query(query: str) -> str:
@@ -122,7 +125,7 @@ def execute_query(query):
         return db.execute(query)
     except Exception as err:
         logger.error(f"Error executing {query}", err)
-        raise err
+        raise
 
 
 def set_status(*args):
@@ -132,7 +135,7 @@ def set_status(*args):
         logger.info(f"executed {proc=}, args {args=}")
     except Exception as err:
         logger.error(f"Error executing {proc=}, {args=}", err)
-        raise err
+        raise
 
 
 def parse_data(data_obj):
@@ -144,10 +147,10 @@ def parse_data(data_obj):
         return None
     except Exception as err:
         logger.error(f"Error parsing data {data_obj=}", err)
-        raise err
+        raise
 
 
-def process_query(query, dry_run):    
+def process_query(query, dry_run):
     (
         file_query_id,
         _,
@@ -160,7 +163,7 @@ def process_query(query, dry_run):
         exchange_product_fk,
         _,
     ) = query
-    
+
     if not dry_run:
         args = (file_stage_fk, const.FILE_STATUS_PROCESS)
         set_status(*args)
@@ -171,25 +174,33 @@ def process_query(query, dry_run):
     if data:
         exchange_product_fk = data.get("product_id", None)
 
-    criterion = (exchange_code if exchange_code else exchange_post_code)
+    criterion = exchange_code if exchange_code else exchange_post_code
     url = f"http://{docker_server_name}:8000/api/v1.0/pangea/decommission/exchange/search?query={criterion}"
     data_obj = get_data(method="GET", url=url)
     data = parse_data(data_obj)
     if data:
         exchange_name = data.get("exchange_name", None)
-        exchange_code = data.get("exchange_code", None)        
+        exchange_code = data.get("exchange_code", None)
         exchange_post_code = data.get("exchange_postcode", None)
         stop_sell_date = data.get("implementation_date", None)
 
-    args = (file_query_id, exchange_name, exchange_code, exchange_post_code, avg_data_usage, stop_sell_date, exchange_product_fk)
+    args = (
+        file_query_id,
+        exchange_name,
+        exchange_code,
+        exchange_post_code,
+        avg_data_usage,
+        stop_sell_date,
+        exchange_product_fk,
+    )
     proc = const.SP_UPDATE_FILE_QUERY
-    
-    try:        
+
+    try:
         affected, _ = db.execute(proc, *args)
         logger.info(f"Executed {proc=}, {args=}, {affected=}")
     except Exception as err:
         logger.error(f"Error updating, {proc=}, {args=}", err)
-        raise err
+        raise
 
 
 def process_upload(upload, dry_run):
@@ -211,7 +222,7 @@ def process_upload(upload, dry_run):
             if not queries and not dry_run:
                 args = (file_stage_id, const.FILE_STATUS_EXCEPTION)
                 set_status(*args)
-            raise err
+            raise
 
     for query in queries:
         logger.info(f"processing {query=}")
@@ -220,7 +231,6 @@ def process_upload(upload, dry_run):
     if not dry_run:
         args = (file_stage_id, const.FILE_STATUS_NOTIFY)
         set_status(*args)
-
         return True
 
 
@@ -234,7 +244,7 @@ def process_uploads(dry_run):
         logger.info(f"fetched uploads, {dry_run=}")
     except Exception as err:
         logger.error(f"Error processing uploads, raising err", err)
-        raise err
+        raise
 
 
 def process_notification(notification, dry_run):
@@ -244,31 +254,41 @@ def process_notification(notification, dry_run):
         recommedations, _ = db.execute(proc, args)
         logger.info(f"executed {proc=}, {args=}, {recommedations=}, {dry_run=}")
     except Exception as err:
-        logger.info(f"Error executing  {proc=}, {args=}, {dry_run=}")        
-        raise err
-    try:        
+        logger.info(f"Error executing  {proc=}, {args=}, {dry_run=}")
+        raise
+    try:
+        df = pandas.DataFrame()
         cc = email_cc_address
         from_addr = email_from_address
-        to_addrs = email_address
-        df_cols = email_template_schema.values()
-        df = pandas.DataFrame(recommedations, columns=df_cols)
+        to_addrs = email_address        
+        try:
+            df_cols = email_template_schema.values()
+            df = pandas.DataFrame(recommedations, columns=df_cols)
+        except Exception as err2:
+            pass
+            logger.error(f"Cannot form attachment, {args=}", err1)
         logger.info(f"sending mail {from_addr=}, {to_addrs=}, {cc=}")
         args = (file_stage_id, const.FILE_STATUS_COMPLETE)
-        if not dry_run:                
+        if not dry_run:
             send_mail(from_addr, to_addrs, cc, df=df)
             set_status(*args)
         logger.info(f"sent mail {args=}, {df=}")
+        if not dry_run:
+            args = (file_stage_id, const.FILE_STATUS_SENT)
+            set_status(*args)
+        logger.info(f"updated status, {args=}")
         return True
     except Exception as err1:
         if not dry_run:
             args = (file_stage_id, const.FILE_STATUS_EXCEPTION)
             set_status(*args)
-            logger.warning(f"Error sending mail, {args=}")
-            raise err1
+            logger.error(f"Error sending mail, {args=}", err1)
+            raise
+
 
 def process_notifications(dry_run):
     try:
-        if not dry_run:            
+        if not dry_run:
             proc, args = const.SP_GET_UPLOADED_FILES, const.FILE_STATUS_NOTIFY
             notifications, _ = db.execute(proc, args)
             for notification in notifications:
@@ -276,7 +296,7 @@ def process_notifications(dry_run):
         logger.info(f"fetched notifications, {dry_run=}")
     except Exception as err:
         logger.error(f"Error processing notification, raising err", err)
-        raise err
+        raise
 
 
 def _main(**kwargs):
@@ -301,19 +321,22 @@ if __name__ == "__main__":
     # setup app for config keys
     app = create_app(config=config)
     # setup mysql server
-    docker_db_name = app.config['DOCKER_DB_NAME']
-    docker_server_name = app.config['DOCKER_SERVER_NAME']
-    docker_proxy_name = app.config['DOCKER_PROXY_NAME']    
+    docker_db_name = app.config["DOCKER_DB_NAME"]
+    docker_server_name = app.config["DOCKER_SERVER_NAME"]
+    docker_proxy_name = app.config["DOCKER_PROXY_NAME"]
     # setup smtp and email
-    email_from_address = app.config['EMAIL_FROM_ADDRESS']
-    email_cc_address = app.config['EMAIL_CC_ADDRESSES']
-    email_attachment = app.config['EMAIL_ATTACHMENT']
-    email_subject = app.config['EMAIL_SUBJECT']
-    smtp_user = app.config['SMTP_USER']    
-    smtp_password = app.config['SMTP_PASSWORD']
-    smtp_host = app.config['SMTP_HOST']
-    smtp_port = app.config['SMTP_PORT']
-    email_template_schema = app.config['EMAIL_TEMPLATE_SCHEMA']
+    email_from_address = app.config["EMAIL_FROM_ADDRESS"]
+    email_cc_address = app.config["EMAIL_CC_ADDRESSES"]
+    email_attachment = app.config["EMAIL_ATTACHMENT"]
+    email_subject = app.config["EMAIL_SUBJECT"]
+    smtp_user = app.config["SMTP_USER"]
+    smtp_password = app.config["SMTP_PASSWORD"]
+    smtp_host = app.config["SMTP_HOST"]
+    smtp_port = app.config["SMTP_PORT"]
+    # setup email template content
+    email_template_text = app.config["EMAIL_TEMPLATE_TEXT"]
+    email_template_html = app.config["EMAIL_TEMPLATE_HTML"]
+    email_template_schema = app.config["EMAIL_TEMPLATE_SCHEMA"]
     # parse args, invoke main
     p = argparse.ArgumentParser(description="Process command line parameters")
     p.add_argument(

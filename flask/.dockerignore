@@ -1,7 +1,6 @@
 **/*.git
 **/*.pyc
 **/*.log
-**/*.csv
 **/*.json
 **/*.DS_Store
 

@@ -70,3 +70,10 @@ class ProductSchema(Schema):
 
 product_schema = ProductSchema()
 products_schema = ProductSchema(many=True)
+
+class AllocationSchema(Schema):
+    results = fields.String()
+
+allocation_schema = AllocationSchema()
+allocations_schema = AllocationSchema(many=True)
+

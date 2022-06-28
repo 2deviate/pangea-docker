@@ -22,7 +22,7 @@ RUN mkdir /home/ubuntu/.aws && chown -R ubuntu:ubuntu /home/ubuntu/.aws
 RUN mkdir -p /home/ubuntu/.aws && touch /home/ubuntu/.aws/config && touch /home/ubuntu/.aws/credentials
 RUN chown -R ubuntu:ubuntu /home/ubuntu/.aws
 
-COPY etl.sh /etc/periodic/daily/etl            
+COPY etl.sh /etc/periodic/daily/etl
 COPY notifier.sh /etc/periodic/15min/notifier
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 

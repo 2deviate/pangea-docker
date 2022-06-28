@@ -15,6 +15,8 @@ VALUES ("Process");
 INSERT INTO file_stage_status (file_stage_status_id)
 VALUES ("Notify");
 INSERT INTO file_stage_status (file_stage_status_id)
+VALUES ("Sent");
+INSERT INTO file_stage_status (file_stage_status_id)
 VALUES ("Complete");
 INSERT INTO file_stage_status (file_stage_status_id)
 VALUES ("Exception");
