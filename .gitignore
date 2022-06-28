@@ -159,5 +159,5 @@ cython_debug/
 passwords.txt
 *.csv
 
-#config/
-#*.env.*
+config/
+*.env.*
