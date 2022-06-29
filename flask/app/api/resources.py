@@ -38,6 +38,21 @@ from app.utils import response_json
 
 logger = logging.getLogger(__name__)
 
+class HealthAPI(Resource):
+    """
+    This API represents health API
+    """
+
+    def __init__(self):        
+        super(HealthAPI, self).__init__()
+
+    def get(self):                
+        return response_json(True, [], constants.DATA_OPERATION_SUCCESSFUL), 200
+
+    def post(self):
+        pass
+
+
 class FttpExchangesAPI(Resource):
     """
     This class represents all FTTP Openreach exchanges API.

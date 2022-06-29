@@ -7,11 +7,13 @@ Category: None
 """
 
 # third-party imports
+from ctypes.wintypes import HENHMETAFILE
 from flask import Blueprint
 from flask_restful import Api
 
 # local imports
 from .resources import (
+    HealthAPI,
     FttpExchangesAPI,
     FttpExchangeAPI,
     SamExchangeAPI,
@@ -30,7 +32,12 @@ api = Api(api_bp)
 
 # Openreach FTTP API - fetches all decommission data loaded in MySQL from Openreach
 api.add_resource(
-    FttpExchangesAPI, "/v1.0/pangea/fttp/exchanges", methods=["GET"], endpoint="/"
+    HealthAPI, "/v1.0/pangea/health", methods=["GET"], endpoint="health"
+)
+
+# Openreach FTTP API - fetches all decommission data loaded in MySQL from Openreach
+api.add_resource(
+    FttpExchangesAPI, "/v1.0/pangea/fttp/exchanges", methods=["GET"], endpoint="exchanges"
 )
 
 # Openreach FTTP API - fetches decommisioned exchange data based on lookup site, name, code and location

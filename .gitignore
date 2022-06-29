@@ -155,9 +155,10 @@ cython_debug/
 .vscode/settings.json
 
 passwords.txt
+
+# Project folder/ files
+
 *.csv
-*.env.*
-.env.dev
 
 config/
-config/.env.dev
+
