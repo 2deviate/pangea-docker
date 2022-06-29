@@ -71,7 +71,7 @@ class Config(object):
     EMAIL_TEMPLATE_HTML = os.getenv("EMAIL_TEMPLATE_HTML", None)
     
     DEFAULT_TEMPLATE_SCHEMA = {
-            "client_id": "Client ID",
+            "cli": "CLI",
             "exchange_name": "Exchange Name",
             "exchange_code": "Exchange Code",
             "exchange_post_code": "Exchange Post Code",
@@ -89,7 +89,7 @@ class Config(object):
     if schema and isinstance(schema, str):
         try:
             EMAIL_TEMPLATE_SCHEMA = json.loads(schema)
-        except json.JSONDecodeError as err:
+        except Exception as err:
             logger.error(f"Failed to parse template {schema=}, defaulting {DEFAULT_TEMPLATE_SCHEMA=}", err)
             EMAIL_TEMPLATE_SCHEMA = DEFAULT_TEMPLATE_SCHEMA    
         

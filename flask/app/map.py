@@ -16,7 +16,8 @@ class Maps(object):
         self.client = None
 
     def init_app(self, app):
-        key = app.config.get("GOOGLE_MAPS_API_KEY", None)
+        config = app.config
+        key = config["GOOGLE_MAPS_API_KEY"]
         self.client = googlemaps.Client(key=key) if key else None
 
     def request(self, query):
@@ -26,6 +27,7 @@ class Maps(object):
                 result = self.client.geocode(query)
         except Exception as err:
             logger.error(err, exc_info=err)
+            raise
         return result
 
 

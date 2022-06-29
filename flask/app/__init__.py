@@ -17,11 +17,11 @@ from .map import maps
 
 
 def create_app(config):
-    app = Flask(__name__, static_url_path="/static/")
-    # setup serializers
-    ma = Marshmallow(app)
+    app = Flask(__name__, static_url_path="/static/")    
     # load configurations
-    app.config.from_object(config)
+    app.config.from_object(config)    
+    # setup serializers
+    Marshmallow(app)
     # initialize app database
     db.init_app(app)
     # initialize maps

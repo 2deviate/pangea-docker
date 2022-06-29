@@ -15,8 +15,8 @@ from botocore.exceptions import ClientError
 
 def get_secret(config):
     # Get Secret Name and Region from App Config
-    secret_name = config.get("AWS_SECRET_NAME", None)
-    region_name = config.get("AWS_REGION_NAME", None)
+    secret_name = config["AWS_SECRET_NAME"]
+    region_name = config["AWS_REGION_NAME"]
 
     if not (secret_name and region_name):
         raise KeyError("missing secret_name and or region_name keys")

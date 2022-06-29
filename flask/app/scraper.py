@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 class WebScraper(object):
 
     def scrape(self, method, url=None, headers=None, body=None, func=None, **attrs):
-        result = None
         try:
             http = urllib3.PoolManager()
             if method == "POST":
@@ -32,7 +31,7 @@ class WebScraper(object):
             return func(soup, **attrs)
         except Exception as err:
             logger.error(err, exc_info=err)
-        return result
+            raise
 
     @staticmethod
     def scrape_table(soup, **attrs):        

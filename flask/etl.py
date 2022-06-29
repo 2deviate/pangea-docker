@@ -115,7 +115,7 @@ def download_file(url, dry_run):
     http = urllib3.PoolManager()
     r = http.request("GET", url, preload_content=False)
     tmp = tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False)
-    logger.error(f"created tmpfile {tmp.name=}")
+    logger.info(f"created tmpfile {tmp.name=}")
     while True and not dry_run:
         data = r.read(CHUNK_SIZE)
         if not data:
@@ -152,7 +152,7 @@ def export_csv(tempfile, sheetname, dry_run):
 
 def import_csv(filename, dry_run):
     if not os.path.isfile(filename):
-        logger.error(f"{filename=} does not exist")
+        logger.info(f"{filename=} does not exist")
         raise
     if not dry_run:
         with open(filename) as f:
@@ -207,7 +207,7 @@ def fetch_data(dry_run):
             if tempfile:
                 filename = export_csv(tempfile, sheetname="Exchange List", dry_run=dry_run)
     except Exception as err:
-        logger.error(f"Swallowed exception", err)
+        logger.error(f"Swallowed fetch data exception", err)
     finally:
         if tempfile and not dry_run:
             os.unlink(tempfile)

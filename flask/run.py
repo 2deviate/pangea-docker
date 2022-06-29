@@ -17,12 +17,14 @@ env = os.environ.get("FLASK_ENV", "dev")
 
 config = configs[env]
 
-host = config.FLASK_HOST
-port = config.FLASK_PORT
-debug = config.FLASK_DEBUG
+# main entry point of the app
+app = create_app(config=config)  # pylint:6 disable=invalid-name
 
-loglevel = config.LOGLEVEL
-logfile = config.LOGFILENAME
+host = app.config["FLASK_HOST"]
+port = app.config["FLASK_PORT"]
+debug = app.config["FLASK_DEBUG"]
+loglevel = app.config["LOGLEVEL"]
+logfile = app.config["LOGFILENAME"]
 
 logging.basicConfig(
     filename=logfile,
@@ -30,8 +32,6 @@ logging.basicConfig(
     format=f"%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s",
 )
 
-# main entry point of the app
-app = create_app(config=config)  # pylint:6 disable=invalid-name
 
 @app.route("/")
 def get_index():

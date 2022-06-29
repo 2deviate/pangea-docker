@@ -34,7 +34,6 @@ class SamKnows(object):
         }
 
     def request(self, method, query=None, url=None, scraper=None):
-        result = None
         try:
             http = urllib3.PoolManager()
             if method == "POST":
@@ -51,7 +50,7 @@ class SamKnows(object):
             return scraper(soup)
         except Exception as err:
             logger.error(err, exc_info=err)
-        return result
+            raise
 
     @staticmethod
     def scrape_info(soup):

@@ -10,11 +10,13 @@ import re
 import logging
 import os
 import json
+from warnings import catch_warnings
 import pandas
 import urllib3
 import time
 import argparse
 import tempfile
+from dateutil import parser
 from run import create_app
 from app.db import db
 from config import configs
@@ -90,7 +92,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, df):
 
     if not df.empty:
         with tempfile.NamedTemporaryFile(suffix=".csv") as tmp:            
-            logger.error(f"created tmpfile {tmp.name=}")                
+            logger.info(f"created tmpfile {tmp.name=}")                
             df.to_csv(tmp, index=False)
             fp = open(tmp.name, "rb")
             attachment = MIMEApplication(fp.read(), _subtype="csv")
@@ -184,6 +186,14 @@ def process_query(query, dry_run):
         exchange_post_code = data.get("exchange_postcode", None)
         stop_sell_date = data.get("implementation_date", None)
 
+        try:
+            if stop_sell_date or stop_sell_date is not None:
+                stop_sell_date = (parser.parse(stop_sell_date).date().strftime("""%Y-%m-%d"""))
+        except parser.ParserError as err:
+            logger.error(f"Unable to parse, {stop_sell_date=}", err)
+            stop_sell_date = None
+            pass  
+
     args = (
         file_query_id,
         exchange_name,
@@ -215,10 +225,10 @@ def process_upload(upload, dry_run):
         try:
             queries, _ = db.execute(proc, file_stage_id)
             logger.info(
-                f"fetched builk queries, proc={proc}, {file_stage_id=}, {dry_run=}"
+                f"fetched builk queries, {proc=}, {file_stage_id=}, {dry_run=}"
             )
         except Exception as err:
-            logger.error(f"Error uploading, proc={proc}, raising err", err)
+            logger.error(f"Error uploading, {proc=}, raising err", err)
             if not queries and not dry_run:
                 args = (file_stage_id, const.FILE_STATUS_EXCEPTION)
                 set_status(*args)
@@ -226,7 +236,10 @@ def process_upload(upload, dry_run):
 
     for query in queries:
         logger.info(f"processing {query=}")
-        process_query(query, dry_run)
+        try:
+            process_query(query, dry_run)
+        except Exception as err:
+            logger.error(f"Error processing upload query, {query=}", err)
 
     if not dry_run:
         args = (file_stage_id, const.FILE_STATUS_NOTIFY)
@@ -265,8 +278,8 @@ def process_notification(notification, dry_run):
             df_cols = email_template_schema.values()
             df = pandas.DataFrame(recommedations, columns=df_cols)
         except Exception as err2:
-            pass
-            logger.error(f"Cannot form attachment, {args=}", err1)
+            logger.error(f"Cannot form attachment, ignoring, {args=}", err2)
+            pass            
         logger.info(f"sending mail {from_addr=}, {to_addrs=}, {cc=}")
         args = (file_stage_id, const.FILE_STATUS_COMPLETE)
         if not dry_run:
@@ -282,8 +295,8 @@ def process_notification(notification, dry_run):
         if not dry_run:
             args = (file_stage_id, const.FILE_STATUS_EXCEPTION)
             set_status(*args)
-            logger.error(f"Error sending mail, {args=}", err1)
-            raise
+        logger.error(f"Error sending mail, {notification=}, {email_address=}", err1)
+        raise
 
 
 def process_notifications(dry_run):
@@ -305,7 +318,7 @@ def _main(**kwargs):
         process_uploads(dry_run)
         process_notifications(dry_run)
     except Exception as ex:
-        logger.error(ex)
+        logger.error(f"Error processing uploads and notifications, {kwargs=}", ex)
         return 1
     return 0
 

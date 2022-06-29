@@ -24,20 +24,24 @@ class MySql(object):
         self.regex = re.compile(r'\(([^\)]+)\)')
 
     def init_app(self, app):
-        config = app.config
-        logger.info(f"Init MySql connection, {app=}, {config=}")     
+        config = app.config        
+        logger.info(f"Init MySql connection, {config=}")     
         try:            
-            self.username = config.get("MYSQL_USER", None)
-            self.password = config.get("MYSQL_PASSWORD", None)
-            self.host = config.get("MYSQL_HOST", None)
-            port_str = config.get("MYSQL_PORT", None)
+            self.username = config["MYSQL_USER"]
+            self.password = config["MYSQL_PASSWORD"]
+            self.host = config["MYSQL_HOST"]
+            port_str = config["MYSQL_PORT"]
+            if port_str is None:
+                raise Exception(f"Invalid configuration, invalid Port, {config['MYSQL_PORT']=}")                
             self.port = int(port_str)
-            self.database = config.get("MYSQL_DATABASE", None)
+            self.database = config["MYSQL_DATABASE"]
             logger.info(f"Connection, un={self.username}, host={self.host}, port={self.port}, db={self.database}")
         except ValueError as err:
             logger.error(err, exc_info=err)
+            raise
         except Exception as err:
             logger.error(err, exc_info=err)
+            raise
 
     def connect(self):
         connection = None
@@ -53,8 +57,10 @@ class MySql(object):
             logger.info(f"MySql Server, {connection.get_server_info=}")
         except pymysql.Error as err:
             logger.error(err, exc_info=err)
+            raise
         except Exception as err:
             logger.error(err, exc_info=err)
+            raise
         return connection
 
     def execute(self, proc, *args):

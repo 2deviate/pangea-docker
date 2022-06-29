@@ -46,4 +46,8 @@ COPY ./requirements.txt .
 
 RUN pip install -r requirements.txt
 
+RUN chmod +x etl.sh
+RUN chmod +x notifier.sh
+RUN chmod +x entrypoint.sh
+
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

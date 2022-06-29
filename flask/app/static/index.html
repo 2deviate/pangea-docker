@@ -115,7 +115,7 @@
             <div class="modal-body">                
                 <form class="form-inline" id="uploadFormDialog" enctype="multipart/form-data" method="post" name="uploadFormDialog">
                     <div class="input-group mb-3">
-                        <input id="emailAddress" type="email" class="form-control" placeholder="Email Address" style="width: 300px;" name="email">
+                        <input id="emailAddress" type="email" class="form-control" placeholder="Email Address" style="width: 300px;" name="email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
                     </div>        
                     <div class="custom-file">
                         <input id="templateFile" type="file" name="file" class="custom-file-input" required>
@@ -363,7 +363,10 @@
             a.click();
             window.URL.revokeObjectURL(url);            
         })
-        .catch(() => alert("Error downloading template!"));        
+        .catch(() => {
+            const msg = `An error occurred with the template`;
+            alerts(true, ["div#success-alert"], msg);
+        }) 
     }
 
     function uploadFile(){
@@ -381,12 +384,12 @@
                 processData: false,
                 success: function (data) {                    
                     if (data && data.response && data.response.status=="Success"){
-                        const msg = `Uploaded File Successfully!`;
+                        const msg = `Uploaded File Successfully`;
                         alerts(true, ["div#success-alert"], msg);                        
                     }
                 },
                 error: function () {
-                    const msg = `An error occurred with the upload!`;
+                    const msg = `An error occurred with the upload`;
                     alerts(true, ["div#success-alert"], msg);
                 },
                 complete: function(){

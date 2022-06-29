@@ -113,15 +113,13 @@ class Exchange(object):
 
     @staticmethod
     def validate_telephone(telephone):
-        is_valid = False
         try:
             # try and parse into telephone number
             number = phonenumbers.parse(telephone, "GB")
-            if isinstance(number, phonenumbers.PhoneNumber):
-                is_valid = True
+            return isinstance(number, phonenumbers.PhoneNumber)                
         except phonenumbers.NumberParseException as ex:
             logger.error("Invalid telephone", ex)
-        return is_valid
+            return False
 
 
 class Product(object):
@@ -163,8 +161,8 @@ class FileResource(object):
 
     @staticmethod
     def template(config):
-        download = config.get("FLASK_APP_DOWNLOAD_FOLDER", None)
-        template = config.get("FLASK_APP_TEMPLATE_NAME", None)        
+        download = config["FLASK_APP_DOWNLOAD_FOLDER"]
+        template = config["FLASK_APP_TEMPLATE_NAME"]
         return download, template
 
     @staticmethod
@@ -198,7 +196,7 @@ class FileStage(object):
     class Row(object):
         def __init__(self, *args) -> None:
             try:
-                self.client_id = args[0] if args[0] else None
+                self.cli = args[0] if args[0] else None
                 self.exchange_name = args[1] if args[1] else None
                 self.exchange_code = args[2] if args[2] else None
                 self.exchange_post_code = args[3] if args[3] else None
@@ -212,7 +210,7 @@ class FileStage(object):
                 raise
 
         def values(self):
-            client_id = str(self.client_id) if self.client_id else None
+            cli = str(self.cli) if self.cli else None
             exchange_name = str(self.exchange_name) if self.exchange_name else None
             exchange_code = str(self.exchange_code) if self.exchange_code else None
             exchange_post_code = str(self.exchange_post_code) if self.exchange_post_code else None
@@ -234,7 +232,7 @@ class FileStage(object):
             file_stage_fk = int(self.file_stage_fk) if self.file_stage_fk else None             
             exchange_product_fk = int(self.exchange_product_fk) if self.exchange_product_fk else None
 
-            return (client_id, exchange_name, exchange_code, exchange_post_code, avg_data_usage, stop_sell_date, file_stage_fk, exchange_product_fk)
+            return (cli, exchange_name, exchange_code, exchange_post_code, avg_data_usage, stop_sell_date, file_stage_fk, exchange_product_fk)
 
     @staticmethod
     def find_by_status(status):        

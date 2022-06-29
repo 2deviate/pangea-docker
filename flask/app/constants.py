@@ -60,7 +60,7 @@ SP_EXECUTE_SQL = "sp_execute_sql"
 EMAIL_ATTACHMENT = "StopSellInfo.csv"
 EMAIL_SUBJECT = "Pangea Exchange Stop Sell Information"
 EMAIL_TEMPLATE_SCHEMA = {
-    "client_id": "Client ID",
+    "cli": "CLI",
     "exchange_name": "Exchange Name",
     "exchange_code": "Exchange Code",
     "exchange_post_code": "Exchange Post Code",

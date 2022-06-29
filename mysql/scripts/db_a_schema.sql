@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS file_stage (
 
 CREATE TABLE IF NOT EXISTS file_query (
     file_query_id INT AUTO_INCREMENT PRIMARY KEY,
-    client_id VARCHAR(50) NULL,
+    cli VARCHAR(50) NULL,
     exchange_name VARCHAR(50) NULL,
     exchange_code VARCHAR(50) NULL,
     exchange_post_code VARCHAR(10) NULL,
@@ -175,7 +175,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_get_recommendations;
 CREATE PROCEDURE sp_get_recommendations(IN file_stage_id INT)
 BEGIN
-    SELECT q.client_id,
+    SELECT q.cli,
         q.exchange_name,
         q.exchange_code,
         q.exchange_post_code,
@@ -280,10 +280,10 @@ DELIMITER ;
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_insert_file_query;
-CREATE PROCEDURE sp_insert_file_query (IN client_id VARCHAR(50), IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_post_code VARCHAR(10), IN avg_data_usage INT, IN stop_sell_date DATE, IN file_stage_fk INT, IN exchange_product_fk INT, OUT file_query_id INT)
+CREATE PROCEDURE sp_insert_file_query (IN cli VARCHAR(50), IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_post_code VARCHAR(10), IN avg_data_usage INT, IN stop_sell_date DATE, IN file_stage_fk INT, IN exchange_product_fk INT, OUT file_query_id INT)
 BEGIN
     INSERT INTO file_query (
-        client_id,
+        cli,
         exchange_name,
         exchange_code,
         exchange_post_code,
@@ -293,7 +293,7 @@ BEGIN
         exchange_product_fk
         ) 
         VALUES (
-        client_id,
+        cli,
         exchange_name,
         exchange_code,
         exchange_post_code,
