@@ -25,8 +25,11 @@ CREATE TABLE IF NOT EXISTS exchange_product (
     exchange_product_default BIT(1) DEFAULT(0) NOT NULL,
     exchange_product_status_fk VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (exchange_product_status_fk) REFERENCES exchange_product_status(exchange_product_status_id)  
+    FOREIGN KEY (exchange_product_status_fk) REFERENCES exchange_product_status(exchange_product_status_id)    
 );
+
+CREATE INDEX idx_1 ON exchange_product (exchange_product_default);
+CREATE INDEX idx_2 ON exchange_product (exchange_product_limit);
 
 CREATE TABLE IF NOT EXISTS file_stage_status (    
     file_stage_status_id VARCHAR(50) PRIMARY KEY    
@@ -44,20 +47,24 @@ CREATE TABLE IF NOT EXISTS file_stage (
     FOREIGN KEY (file_stage_status_fk) REFERENCES file_stage_status(file_stage_status_id)
 );
 
+CREATE INDEX idx_3 ON file_stage (file_stage_status_fk);
+
 CREATE TABLE IF NOT EXISTS file_query (
     file_query_id INT AUTO_INCREMENT PRIMARY KEY,
     cli VARCHAR(50) NULL,
     exchange_name VARCHAR(50) NULL,
     exchange_code VARCHAR(50) NULL,
-    exchange_post_code VARCHAR(10) NULL,
+    exchange_post_code VARCHAR(50) NULL,
     avg_data_usage INT NULL,    
-    stop_sell_date DATE NULL,    
+    stop_sell_date VARCHAR(50) NULL,    
     file_stage_fk INT NOT NULL,
     exchange_product_fk INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (file_stage_fk) REFERENCES file_stage(file_stage_id),
     FOREIGN KEY (exchange_product_fk) REFERENCES exchange_product(exchange_product_id)  
 );
+
+CREATE INDEX idx_4 ON file_query (file_stage_fk);
 
 CREATE TABLE IF NOT EXISTS exchange_decom (
     exchange_decom_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -70,6 +77,9 @@ CREATE TABLE IF NOT EXISTS exchange_decom (
     tranche VARCHAR(50) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_5 ON file_query (exchange_name);
+CREATE INDEX idx_6 ON file_query (exchange_code);
 
 -- DROP AND CREATE STORED PROCS
 -- File Stage Procs
@@ -93,10 +103,11 @@ DELIMITER ;
 -- File Query Procs
 DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_update_file_query;
-CREATE PROCEDURE sp_update_file_query(IN file_query_id INT,IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_post_code VARCHAR(10), IN avg_data_usage INT, IN stop_sell_date DATE, IN exchange_product_id INT)
+CREATE PROCEDURE sp_update_file_query(IN file_query_id INT, IN cli VARCHAR(50), IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_post_code VARCHAR(50), IN avg_data_usage INT, IN stop_sell_date VARCHAR(50), IN exchange_product_id INT)
 BEGIN
     UPDATE file_query f
-    SET f.exchange_name=exchange_name,
+    SET f.cli=cli,
+        f.exchange_name=exchange_name,
         f.exchange_code=exchange_code,
         f.exchange_post_code=exchange_post_code,
         f.avg_data_usage=avg_data_usage,
@@ -159,7 +170,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_get_exchange_decom_by_exchange_id;
 CREATE PROCEDURE sp_get_exchange_decom_by_exchange_id(IN exchange_decom_id INT)
 BEGIN
-    SELECT * FROM exchange e WHERE e.exchange_decom_id=exchange_decom_id;
+    SELECT * FROM exchange_decom e WHERE e.exchange_decom_id=exchange_decom_id;
 END$$
 DELIMITER ;
 
@@ -280,7 +291,7 @@ DELIMITER ;
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_insert_file_query;
-CREATE PROCEDURE sp_insert_file_query (IN cli VARCHAR(50), IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_post_code VARCHAR(10), IN avg_data_usage INT, IN stop_sell_date DATE, IN file_stage_fk INT, IN exchange_product_fk INT, OUT file_query_id INT)
+CREATE PROCEDURE sp_insert_file_query (IN cli VARCHAR(50), IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_post_code VARCHAR(50), IN avg_data_usage INT, IN stop_sell_date VARCHAR(50), IN file_stage_fk INT, IN exchange_product_fk INT, OUT file_query_id INT)
 BEGIN
     INSERT INTO file_query (
         cli,

@@ -10,7 +10,6 @@ import re
 import logging
 import os
 import json
-from warnings import catch_warnings
 import pandas
 import urllib3
 import time
@@ -41,6 +40,7 @@ logging.basicConfig(
 # script globals
 docker_db_name = None
 docker_server_name = None
+docker_server_port = None
 docker_proxy_name = None
 
 email_from_address = None
@@ -97,7 +97,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, df):
             fp = open(tmp.name, "rb")
             attachment = MIMEApplication(fp.read(), _subtype="csv")
             fp.close()
-            attachment.add_header("Content-Disposition", "attachment", filename=tmp.name)    
+            attachment.add_header("Content-Disposition", "attachment", filename=email_attachment)    
             msg_mixed.attach(attachment)
 
     msg_mixed["From"] = from_addr
@@ -155,7 +155,7 @@ def parse_data(data_obj):
 def process_query(query, dry_run):
     (
         file_query_id,
-        _,
+        cli,
         exchange_name,
         exchange_code,
         exchange_post_code,
@@ -170,17 +170,17 @@ def process_query(query, dry_run):
         args = (file_stage_fk, const.FILE_STATUS_PROCESS)
         set_status(*args)
 
-    url = f"http://{docker_server_name}:8000/api/v1.0/pangea/recommendation/product/usage?limit={avg_data_usage}"
+    url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/recommendation/product/usage?limit={avg_data_usage}"
     data_obj = get_data(method="GET", url=url)
     data = parse_data(data_obj)
     if data:
         exchange_product_fk = data.get("product_id", None)
 
-    criterion = exchange_code if exchange_code else exchange_post_code
-    url = f"http://{docker_server_name}:8000/api/v1.0/pangea/decommission/exchange/search?query={criterion}"
+    criterion = cli if cli else exchange_code if exchange_code else exchange_post_code
+    url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/decommission/exchange/search?query={criterion}"
     data_obj = get_data(method="GET", url=url)
     data = parse_data(data_obj)
-    if data:
+    if data:        
         exchange_name = data.get("exchange_name", None)
         exchange_code = data.get("exchange_code", None)
         exchange_post_code = data.get("exchange_postcode", None)
@@ -191,17 +191,19 @@ def process_query(query, dry_run):
                 stop_sell_date = (parser.parse(stop_sell_date).date().strftime("""%Y-%m-%d"""))
         except parser.ParserError as err:
             logger.error(f"Unable to parse, {stop_sell_date=}", err)
-            stop_sell_date = None
-            pass  
+            pass
+        
+        stop_sell_date = str(stop_sell_date)
 
     args = (
         file_query_id,
-        exchange_name,
-        exchange_code,
-        exchange_post_code,
+        cli if cli else const.NO_DATA_RESULTS_FOUND,
+        exchange_name if exchange_name else const.NO_DATA_RESULTS_FOUND,
+        exchange_code if exchange_code else const.NO_DATA_RESULTS_FOUND,
+        exchange_post_code if exchange_post_code else const.NO_DATA_RESULTS_FOUND,
         avg_data_usage,
         stop_sell_date,
-        exchange_product_fk,
+        exchange_product_fk
     )
     proc = const.SP_UPDATE_FILE_QUERY
 
@@ -336,6 +338,7 @@ if __name__ == "__main__":
     # setup mysql server
     docker_db_name = app.config["DOCKER_DB_NAME"]
     docker_server_name = app.config["DOCKER_SERVER_NAME"]
+    docker_server_port = app.config["DOCKER_SERVER_PORT"]    
     docker_proxy_name = app.config["DOCKER_PROXY_NAME"]
     # setup smtp and email
     email_from_address = app.config["EMAIL_FROM_ADDRESS"]

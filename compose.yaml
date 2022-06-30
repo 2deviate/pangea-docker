@@ -48,6 +48,7 @@ services:
       - MYSQL_ROOT_PASSWORD      
       - DOCKER_DB_NAME
       - DOCKER_SERVER_NAME
+      - DOCKER_SERVER_PORT
       - DOCKER_PROXY_NAME
       - GOOGLE_MAPS_API_KEY         
       - SMTP_USER

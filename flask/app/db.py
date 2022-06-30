@@ -5,6 +5,7 @@ Description: Database connector.  Implementation of MySql data connector
 Notifyees: craig@2deviate.com
 Category: None
 """
+import os
 import re
 import pymysql
 import logging
@@ -21,21 +22,26 @@ class MySql(object):
         self.port = None
         self.database = None
         self.uri = None
-        self.regex = re.compile(r'\(([^\)]+)\)')
+        self.regex = re.compile(r"\(([^\)]+)\)")
 
     def init_app(self, app):
-        config = app.config        
-        logger.info(f"Init MySql connection, {config=}")     
-        try:            
-            self.username = config["MYSQL_USER"]
-            self.password = config["MYSQL_PASSWORD"]
-            self.host = config["MYSQL_HOST"]
-            port_str = config["MYSQL_PORT"]
+        config = app.config
+        logger.info(f"Init MySql connection, {config=}")
+        try:
+            # dont use config from app as this is share script
+            # code which may not have the app context, instead
+            # use environment variables
+            self.username = os.getenv("MYSQL_USER", None)
+            self.password = os.getenv("MYSQL_PASSWORD", None)
+            self.host = os.getenv("MYSQL_HOST", None)
+            port_str = os.getenv("MYSQL_PORT", None)
             if port_str is None:
-                raise Exception(f"Invalid configuration, invalid Port, {config['MYSQL_PORT']=}")                
+                raise Exception(f"Invalid configuration, Port None")
             self.port = int(port_str)
-            self.database = config["MYSQL_DATABASE"]
-            logger.info(f"Connection, un={self.username}, host={self.host}, port={self.port}, db={self.database}")
+            self.database = os.getenv("MYSQL_DATABASE", None)
+            logger.info(
+                f"Connection, un={self.username}, host={self.host}, port={self.port}, db={self.database}"
+            )
         except ValueError as err:
             logger.error(err, exc_info=err)
             raise
@@ -66,22 +72,26 @@ class MySql(object):
     def execute(self, proc, *args):
         logger.info(f"Executing sql command {proc=}, {args=}")
         with self.connect() as cnn:
-            with cnn.cursor() as curs:                    
+            with cnn.cursor() as curs:
                 try:
                     param_vals = None
-                    status = curs.callproc(proc, args)                    
-                    cnn.commit()                    
+                    status = curs.callproc(proc, args)
+                    cnn.commit()
                     results = curs.fetchall()
                     last_executed = curs._last_executed
-                    logger.info(f"executed {proc=}, {last_executed=}, returned {status=}, fetchall {results=}")
-                    proc_params = self.regex.findall(last_executed)                    
+                    logger.info(
+                        f"executed {proc=}, {last_executed=}, returned {status=}, fetchall {results=}"
+                    )
+                    proc_params = self.regex.findall(last_executed)
                     if proc_params:
-                        stmt = f'SELECT {proc_params[0]}'                    
+                        stmt = f"SELECT {proc_params[0]}"
                         curs.execute(stmt)
                         param_vals = curs.fetchone()
-                        logger.info(f"executed sql param {stmt=}, result {param_vals=}")                    
+                        logger.info(f"executed sql param {stmt=}, result {param_vals=}")
                     return results, param_vals
                 except Exception as err:
                     logger.error(err, exc_info=err)
                     raise
+
+
 db = MySql()

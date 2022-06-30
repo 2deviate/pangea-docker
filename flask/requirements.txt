@@ -1,11 +1,13 @@
 aniso8601==9.0.1
 beautifulsoup4==4.10.0
-black==22.1.0
+black==22.6.0
 boto3==1.21.19
 botocore==1.24.19
 certifi==2021.10.8
 chardet==4.0.0
 click==8.0.4
+dnspython==2.2.1
+email-validator==1.2.1
 et-xmlfile==1.1.0
 Flask==2.0.3
 flask-marshmallow==0.14.0

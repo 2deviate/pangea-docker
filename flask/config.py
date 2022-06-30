@@ -49,6 +49,7 @@ class Config(object):
     # Docker Service configurations
     DOCKER_DB_NAME = os.getenv("DOCKER_DB_NAME", None)
     DOCKER_SERVER_NAME = os.getenv("DOCKER_SERVER_NAME", None)
+    DOCKER_SERVER_PORT = os.getenv("DOCKER_SERVER_PORT", None)
     DOCKER_PROXY_NAME = os.getenv("DOCKER_PROXY_NAME", None)
 
     # Google Maps API Key
@@ -70,7 +71,7 @@ class Config(object):
     EMAIL_TEMPLATE_TEXT = os.getenv("EMAIL_TEMPLATE_TEXT", None)
     EMAIL_TEMPLATE_HTML = os.getenv("EMAIL_TEMPLATE_HTML", None)
     
-    DEFAULT_TEMPLATE_SCHEMA = {
+    EMAIL_TEMPLATE_SCHEMA = {
             "cli": "CLI",
             "exchange_name": "Exchange Name",
             "exchange_code": "Exchange Code",
@@ -88,10 +89,9 @@ class Config(object):
     schema = os.getenv("EMAIL_TEMPLATE_SCHEMA", None)
     if schema and isinstance(schema, str):
         try:
-            EMAIL_TEMPLATE_SCHEMA = json.loads(schema)
+            EMAIL_TEMPLATE_SCHEMA = json.loads(schema) # acts as an override
         except Exception as err:
-            logger.error(f"Failed to parse template {schema=}, defaulting {DEFAULT_TEMPLATE_SCHEMA=}", err)
-            EMAIL_TEMPLATE_SCHEMA = DEFAULT_TEMPLATE_SCHEMA    
+            logger.error(f"Failed to parse template {schema=}, defaulting {EMAIL_TEMPLATE_SCHEMA=}", err)
         
     PROXY_SERVER = os.getenv("PROXY_SERVER", None)
 

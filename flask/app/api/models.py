@@ -7,6 +7,7 @@ Category: None
 """
 
 # local imports
+import re
 import os
 import csv
 import uuid
@@ -191,7 +192,7 @@ class FileResource(object):
 class FileStage(object):
     """
     This class represents a file stage object
-    """
+    """    
         
     class Row(object):
         def __init__(self, *args) -> None:
@@ -227,7 +228,9 @@ class FileStage(object):
                     stop_sell_date = (parser.parse(self.stop_sell_date).date().strftime("""%Y-%m-%d"""))
             except parser.ParserError as err:
                 logger.error(f"Unable to parse, {stop_sell_date=}", err)
-                pass                
+                pass
+
+            stop_sell_date = str(stop_sell_date)                
             
             file_stage_fk = int(self.file_stage_fk) if self.file_stage_fk else None             
             exchange_product_fk = int(self.exchange_product_fk) if self.exchange_product_fk else None
@@ -241,7 +244,8 @@ class FileStage(object):
     @staticmethod
     def insert(email, filename):
         logger.info(f"Processing file for insert into db, {email=}, {filename=}")
-        if email and os.path.exists(filename):            
+        
+        if email and FileStage.validate_email(email) and os.path.exists(filename):            
             file_path = os.path.dirname(filename)
             file_name = os.path.basename(filename)
             file_stage_status = const.FILE_STATUS_NEW
@@ -301,6 +305,15 @@ class FileStage(object):
         if filename and os.path.exists(filename):
             stats = os.stat(filename)
             return stats.st_size, stats.st_mtime
+
+    @staticmethod
+    def validate_email(email):
+        regexp = re.compile(r'[^@]+@[^@]+\.[^@]+')        
+        try:            
+            return True if regexp.match(email) else False
+        except Exception as ex:
+            logger.error(f"Invalid email, {email=}", ex)
+            raise
 
 
 class Allocation(object):
