@@ -23,6 +23,7 @@ from .models import (
     FileResource,
     FileStage,
     Allocation,
+    ScriptExecute,
 )
 from app.api.schemas import (
     decommissions_exchange_schema,
@@ -321,9 +322,9 @@ class UploadAPI(Resource):
             if status == "Success":
                 filename = results.get("filename", None)
                 if filename:
-                    last_bulk_row_id = FileStage.insert(email, filename)
+                    *_, last_bulk_row_id = FileStage.insert(email, filename)
                     if last_bulk_row_id and last_bulk_row_id > 0:
-                        results["last_bulk_row_id"] = last_bulk_row_id
+                        results["last_row_id"] = last_bulk_row_id
             else:  # failed to upload
                 pass
         except IOError:
@@ -389,6 +390,44 @@ class AllocationAPI(Resource):
 
     def post(self):
         pass
+
+
+class ScriptEtlAPI(Resource):
+    """
+    This API represents a script API
+    """
+
+    def __init__(self):
+        self.script = f'/home/app/etl.sh'
+        super(ScriptEtlAPI, self).__init__()
+
+    def get(self):
+        stdout = ScriptExecute.execute(self.script)        
+        if stdout:
+            return response_json(True, f'<pre>{stdout}</pre>', constants.DATA_OPERATION_SUCCESSFUL)        
+        return response_json(True, [], constants.DATA_OPERATION_SUCCESSFUL)
+
+    def post(self):
+        pass
+
+
+class ScriptNotifyAPI(Resource):
+    """
+    This API represents a script API
+    """
+
+    def __init__(self):
+        self.script = f'/home/app/notifier.sh'
+        super(ScriptNotifyAPI, self).__init__()
+
+    def get(self):
+        stdout = ScriptExecute.execute(self.script)        
+        if stdout:
+            return response_json(True, f'<pre>{stdout}</pre>', constants.DATA_OPERATION_SUCCESSFUL)        
+        return response_json(True, [], constants.DATA_OPERATION_SUCCESSFUL)
+
+    def post(self):
+        pass    
 
 def serialize_product(product):
     return {

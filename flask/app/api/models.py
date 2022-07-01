@@ -12,6 +12,7 @@ import os
 import csv
 import uuid
 import logging
+import subprocess
 import phonenumbers
 import datetime
 import app.constants as const
@@ -196,13 +197,14 @@ class FileStage(object):
         
     class Row(object):
         def __init__(self, *args) -> None:
+            self.args = args
             try:
-                self.cli = args[0] if args[0] else None
-                self.exchange_name = args[1] if args[1] else None
-                self.exchange_code = args[2] if args[2] else None
-                self.exchange_post_code = args[3] if args[3] else None
-                self.avg_data_usage = args[4] if args[4] else None
-                self.file_stage_fk = args[5] if args[5] else None
+                #CLI,POST_CODE,EXCHANGE_CODE,DATA_USAGE
+                self.cli = self.args[0] if self.args[0] else None
+                self.exchange_post_code = self.args[1] if self.args[1] else None                
+                self.exchange_code = self.args[2] if self.args[2] else None
+                self.avg_data_usage = self.args[3] if self.args[3] else None                                
+                self.file_stage_fk = self.args[4] if self.args[4] else None
                 # implemented place holder fields
                 self.stop_sell_date = None
                 self.exchange_product_fk = None
@@ -211,30 +213,20 @@ class FileStage(object):
                 raise
 
         def values(self):
-            cli = str(self.cli) if self.cli else None
-            exchange_name = str(self.exchange_name) if self.exchange_name else None
+            cli = str(self.cli) if self.cli else None                        
+            exchange_name = None  # PAN-17. Removed as deemed unecessary
             exchange_code = str(self.exchange_code) if self.exchange_code else None
             exchange_post_code = str(self.exchange_post_code) if self.exchange_post_code else None
-            
-            try:
-                avg_data_usage = int(self.avg_data_usage) if self.avg_data_usage else 0
-            except ValueError:
-                logger.error(f"Unable to parse, {avg_data_usage=}", err)
-                pass                
-            
-            stop_sell_date = None
-            try:
-                if self.stop_sell_date or self.stop_sell_date is not None:
-                    stop_sell_date = (parser.parse(self.stop_sell_date).date().strftime("""%Y-%m-%d"""))
-            except parser.ParserError as err:
-                logger.error(f"Unable to parse, {stop_sell_date=}", err)
-                pass
-
-            stop_sell_date = str(stop_sell_date)                
-            
-            file_stage_fk = int(self.file_stage_fk) if self.file_stage_fk else None             
-            exchange_product_fk = int(self.exchange_product_fk) if self.exchange_product_fk else None
-
+            avg_data_usage = 0
+            if self.avg_data_usage:
+                try:
+                    avg_data_usage = int(self.avg_data_usage)
+                except ValueError as err:
+                    logger.error(f"Unable to parse avg_data_usage as int, {self.args=}", err)                    
+                    pass
+            stop_sell_date = None            
+            file_stage_fk = self.file_stage_fk
+            exchange_product_fk = self.exchange_product_fk
             return (cli, exchange_name, exchange_code, exchange_post_code, avg_data_usage, stop_sell_date, file_stage_fk, exchange_product_fk)
 
     @staticmethod
@@ -279,7 +271,7 @@ class FileStage(object):
                                 args = row_obj.values()
                                 
                                 logger.info(f"Insert call, {proc=}, {args=}")
-                                _ , params = db.execute(proc, *args, None)                    
+                                _ , params = db.execute(proc, *args, None)
 
                 except Exception as err:
                     logger.error(f"Unable to import file into db {filename=}", err)
@@ -299,6 +291,7 @@ class FileStage(object):
                         logger.info(f"Updating status, {proc=}, {args=}")
                         db.execute(proc, *args)
                         raise
+            return params
 
     @staticmethod
     def get_resource_attributes(filename):
@@ -330,3 +323,16 @@ class Allocation(object):
     @staticmethod
     def execute_sql(sql):
         return db.execute(const.SP_EXECUTE_SQL, sql)   
+
+
+class ScriptExecute(object):
+    """
+    This class represents an simple script class
+    """
+    @staticmethod
+    def execute(script):
+        #sudo -E su root -c 'sh /home/app/notifier.sh'
+        exec_cmd = ["sudo", "-E", "su", "root", "-c", f"'sh {script}'"]
+        logger.info(f"Invoking script, {script=}, as exec_cmd={' '.join(exec_cmd)}")
+        return subprocess.run(exec_cmd, capture_output=True)
+

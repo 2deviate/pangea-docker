@@ -7,7 +7,6 @@ Category: None
 """
 
 # third-party imports
-from ctypes.wintypes import HENHMETAFILE
 from flask import Blueprint
 from flask_restful import Api
 
@@ -22,7 +21,9 @@ from .resources import (
     DownloadAPI,
     UploadAPI,
     RecommendationAPI,
-    AllocationAPI
+    AllocationAPI,
+    ScriptEtlAPI,
+    ScriptNotifyAPI
 )
 
 # pylint: disable=invalid-name
@@ -117,3 +118,12 @@ api.add_resource(
     AllocationAPI, "/v1.0/pangea/resource/db/query", methods=["GET"], endpoint="query"    
 )
 
+# Resource API - etl script invocations
+api.add_resource(
+    ScriptEtlAPI, "/v1.0/pangea/resource/script/etl", methods=["GET"], endpoint="etl"
+)
+
+# Resource API - notifier script invocations
+api.add_resource(
+    ScriptNotifyAPI, "/v1.0/pangea/resource/script/notify", methods=["GET"], endpoint="notify"
+)

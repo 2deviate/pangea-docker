@@ -15,11 +15,13 @@ import urllib3
 import time
 import argparse
 import tempfile
-from dateutil import parser
+import asyncio
 from run import create_app
 from app.db import db
 from config import configs
 import app.constants as const
+from dateutil import parser
+from functools import reduce
 
 import smtplib
 from email.mime.text import MIMEText
@@ -77,7 +79,7 @@ def get_data(method, url=None, headers=None, body=None, **attrs):
 
 def send_mail(from_addr, to_addrs, cc_addrs, df):
 
-    text = email_template_text
+    text = email_template_text if email_template_text else ""
     html = email_template_html if email_template_html else df.to_html(index=False)
 
     text_part = MIMEText(text, "plain")
@@ -152,58 +154,82 @@ def parse_data(data_obj):
         raise
 
 
-def process_query(query, dry_run):
-    (
-        file_query_id,
-        cli,
-        exchange_name,
-        exchange_code,
-        exchange_post_code,
-        avg_data_usage,
-        stop_sell_date,
-        file_stage_fk,
-        exchange_product_fk,
-        _,
-    ) = query
+async def request_data(url, **kwargs):
+    data_obj = get_data(method="GET", url=url)
+    data = parse_data(data_obj)
+    if data:
+        return kwargs | data
+    return kwargs
 
+
+async def process_query(query, dry_run):
+    schema = [
+        'file_query_id',
+        'cli',
+        'exchange_name',
+        'exchange_code',
+        'exchange_postcode',
+        'avg_data_usage',
+        'implementation_date',
+        'file_stage_fk',
+        'exchange_product_fk'        
+    ]
+    query = { k:query[i] for i, k in enumerate(schema) }
+
+    cli = query['cli']
+    exchange_code = query['exchange_code']
+    exchange_post_code = query['exchange_postcode']
+    avg_data_usage = query['avg_data_usage']
+    file_stage_fk = query['file_stage_fk']
+    
     if not dry_run:
         args = (file_stage_fk, const.FILE_STATUS_PROCESS)
         set_status(*args)
 
     url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/recommendation/product/usage?limit={avg_data_usage}"
-    data_obj = get_data(method="GET", url=url)
-    data = parse_data(data_obj)
-    if data:
-        exchange_product_fk = data.get("product_id", None)
+    #data = await request_data(url, **query)
+    t1 = request_data(url, **query)
+    
+    criterion = cli if cli else exchange_post_code if exchange_post_code else exchange_code
+    url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/sam/exchange/info?query={criterion}"
+    #data = await request_data(url, **data)
+    t2 = request_data(url, **query)
 
-    criterion = cli if cli else exchange_code if exchange_code else exchange_post_code
-    url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/decommission/exchange/search?query={criterion}"
-    data_obj = get_data(method="GET", url=url)
-    data = parse_data(data_obj)
-    if data:        
-        exchange_name = data.get("exchange_name", None)
-        exchange_code = data.get("exchange_code", None)
-        exchange_post_code = data.get("exchange_postcode", None)
-        stop_sell_date = data.get("implementation_date", None)
+    # prop and await results
+    results = await asyncio.gather(t1, t2)
+    
+    # combine dicts using reduce on merge lambda
+    data = reduce(lambda x, y: x | y, results, {})
+                
+    exchange_code = data['exchange_code']
+    if exchange_code:
+        url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/decommission/exchange/search?query={exchange_code}"
+        data = await request_data(url, **data)
 
-        try:
-            if stop_sell_date or stop_sell_date is not None:
-                stop_sell_date = (parser.parse(stop_sell_date).date().strftime("""%Y-%m-%d"""))
-        except parser.ParserError as err:
-            logger.error(f"Unable to parse, {stop_sell_date=}", err)
-            pass
+        implementation_date = data['implementation_date']
         
-        stop_sell_date = str(stop_sell_date)
+        if implementation_date is None:
+            url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/sam/exchange/info?exchange_code={exchange_code}"
+            data = await request_data(url, **data)
+    
+    implementation_date = data.get('implementation_date')
+
+    if implementation_date:
+        try:
+            data['stop_sell_date'] = parser.parse(implementation_date).date().strftime("""%Y-%m-%d""")
+        except parser.ParserError as err:
+            logger.error(f"Unable to parse, {implementation_date=}", err)            
+            pass
 
     args = (
-        file_query_id,
-        cli if cli else const.NO_DATA_RESULTS_FOUND,
-        exchange_name if exchange_name else const.NO_DATA_RESULTS_FOUND,
-        exchange_code if exchange_code else const.NO_DATA_RESULTS_FOUND,
-        exchange_post_code if exchange_post_code else const.NO_DATA_RESULTS_FOUND,
-        avg_data_usage,
-        stop_sell_date,
-        exchange_product_fk
+        data.get('file_query_id'),
+        data.get('cli', const.NO_DATA_RESULTS_FOUND),
+        data.get('exchange_name', const.NO_DATA_RESULTS_FOUND),
+        data.get('exchange_code', const.NO_DATA_RESULTS_FOUND),
+        data.get('exchange_postcode', const.NO_DATA_RESULTS_FOUND),
+        data.get('avg_data_usage'),
+        data.get('stop_sell_date', const.NO_DATA_RESULTS_FOUND),
+        data.get('product_id')
     )
     proc = const.SP_UPDATE_FILE_QUERY
 
@@ -215,7 +241,7 @@ def process_query(query, dry_run):
         raise
 
 
-def process_upload(upload, dry_run):
+async def process_upload(upload, dry_run):
     file_stage_id, *_ = upload
 
     if not dry_run:
@@ -239,7 +265,7 @@ def process_upload(upload, dry_run):
     for query in queries:
         logger.info(f"processing {query=}")
         try:
-            process_query(query, dry_run)
+            await process_query(query, dry_run)
         except Exception as err:
             logger.error(f"Error processing upload query, {query=}", err)
 
@@ -249,13 +275,13 @@ def process_upload(upload, dry_run):
         return True
 
 
-def process_uploads(dry_run):
+async def process_uploads(dry_run):
     try:
         if not dry_run:
             proc, args = const.SP_GET_UPLOADED_FILES, const.FILE_STATUS_NEW
             uploads, _ = db.execute(proc, args)
             for upload in uploads:
-                process_upload(upload, dry_run)
+                await process_upload(upload, dry_run)
         logger.info(f"fetched uploads, {dry_run=}")
     except Exception as err:
         logger.error(f"Error processing uploads, raising err", err)
@@ -314,10 +340,10 @@ def process_notifications(dry_run):
         raise
 
 
-def _main(**kwargs):
+async def _main(**kwargs):
     dry_run = kwargs.get("dry_run", None)
     try:
-        process_uploads(dry_run)
+        await process_uploads(dry_run)
         process_notifications(dry_run)
     except Exception as ex:
         logger.error(f"Error processing uploads and notifications, {kwargs=}", ex)
@@ -361,7 +387,7 @@ if __name__ == "__main__":
         help="dry run flag, if set to True no writes",
     )
     args = p.parse_args()
-    status = _main(**vars(args))
+    status = asyncio.run(_main(**vars(args)))
     # capture wall time and status
     end = time.time()
     elapsed = end - start
