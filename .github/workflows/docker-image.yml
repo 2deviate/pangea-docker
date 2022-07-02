@@ -1,5 +1,4 @@
-name: Docker Image CI
-name: 2deviate/pangea-docker
+name: pangea-docker
 on: push
 jobs:
   test:
