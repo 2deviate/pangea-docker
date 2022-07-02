@@ -220,6 +220,8 @@ async def process_query(query, dry_run):
         except parser.ParserError as err:
             logger.error(f"Unable to parse, {implementation_date=}", err)            
             pass
+    
+    data = { k:v for k,v in data.items() if v is not None}
 
     args = (
         data.get('file_query_id'),
@@ -228,7 +230,7 @@ async def process_query(query, dry_run):
         data.get('exchange_code', const.NO_DATA_RESULTS_FOUND),
         data.get('exchange_postcode', const.NO_DATA_RESULTS_FOUND),
         data.get('avg_data_usage'),
-        data.get('stop_sell_date', const.NO_DATA_RESULTS_FOUND),
+        data.get('stop_sell_date', const.NO_STOP_SELL_INFORMATION),
         data.get('product_id')
     )
     proc = const.SP_UPDATE_FILE_QUERY
