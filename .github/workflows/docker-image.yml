@@ -1,5 +1,5 @@
 name: Docker Image CI
-name: docker-compose-actions-workflow
+name: pangea-docker
 on: push
 jobs:
   test:
