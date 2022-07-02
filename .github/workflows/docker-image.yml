@@ -8,4 +8,4 @@ jobs:
       - name: Build the stack
         run: docker-compose --env-file ./config/.env.dev up -d
       - name: Test
-        run: docker run --network container:frontend curl -s --retry 10 --retry-connrefused http://server:8000/api/v1.0/pangea/health
+        run: docker run 2deviate/pangea-server:v1.0 curl -s --retry 10 --retry-connrefused http://localhost:8000/api/v1.0/pangea/health
