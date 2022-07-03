@@ -37,7 +37,12 @@ class Config(object):
     FLASK_APP_TEMPLATE_NAME = os.getenv("FLASK_APP_TEMPLATE_NAME", None)
     FLASK_APP_UPLOAD_FOLDER = os.getenv("FLASK_APP_UPLOAD_FOLDER", None)
     FLASK_APP_DOWNLOAD_FOLDER = os.getenv("FLASK_APP_DOWNLOAD_FOLDER", None)    
-    FLASK_FILE_UPLOAD_MAX_LENGTH = os.getenv("FLASK_APP_DOWNLOAD_FOLDER", None)    
+    FLASK_FILE_UPLOAD_MAX_LENGTH = os.getenv("FLASK_APP_DOWNLOAD_FOLDER", None)
+
+    # Redis Cache
+    REDIS_CACHE_DEBUG = os.getenv("REDIS_CACHE_DEBUG", True)
+    REDIS_CACHE_TYPE = os.getenv("REDIS_CACHE_TYPE", "SimpleCache")
+    REDIS_CACHE_DEFAULT_TIME = os.getenv("CACHE_DEFAULT_TIMEOUT", 300)
 
     # Local MySql configuration (NOT AWS RDS)
     MYSQL_USER = os.getenv("MYSQL_USER", None)

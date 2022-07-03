@@ -88,6 +88,14 @@ services:
     command: /app/setup.sh
     networks:
       - frontend
+  redis:
+      build: redis
+      image: 2deviate/pangea-redis:v1.0
+      ports:
+        - "6379:6379"
+      volumes:
+        - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+        - /mnt/xvdb/redis:/usr/local/etc/redis
 volumes:
   db-data:
 networks:

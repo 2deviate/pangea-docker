@@ -15,6 +15,7 @@ from flask import current_app, safe_join, send_from_directory
 
 # local imports
 from app import constants
+
 from .models import (    
     FttpExchange,
     Product,
@@ -39,6 +40,13 @@ from app.utils import response_json
 
 logger = logging.getLogger(__name__)
 
+# def cache_key():
+#     args = request.args
+#     key = request.path + '?' + urllib.urlencode(
+#         (k,v) for k in sorted(args) for v in sorted(args.getlist[k])
+#     )
+#     return key
+
 class HealthAPI(Resource):
     """
     This API represents health API
@@ -46,7 +54,7 @@ class HealthAPI(Resource):
 
     def __init__(self):        
         super(HealthAPI, self).__init__()
-
+    
     def get(self):                
         return response_json(True, [], constants.DATA_OPERATION_SUCCESSFUL), 200
 
@@ -344,7 +352,7 @@ class RecommendationAPI(Resource):
         self.parser = reqparse.RequestParser()  # pylint: disable=invalid-name
         self.parser.add_argument("limit", type=str)
         super(RecommendationAPI, self).__init__()
-
+    
     def get(self):
         args = self.parser.parse_args()
         limit = args["limit"]

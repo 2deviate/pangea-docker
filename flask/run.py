@@ -8,10 +8,9 @@ Category: None
 
 # local imports
 import os
-from app import create_app
-from config import configs
-
 import logging
+from config import configs
+from app import create_app
 
 env = os.environ.get("FLASK_ENV", "dev")
 
@@ -37,10 +36,11 @@ logging.basicConfig(
 def get_index():
     return app.send_static_file("index.html")
 
+
 if __name__ == "__main__":
     logging.info(f"Flask configuration {config=}")
     logging.info(f"Starting Server {host=}, {port=}, {debug=}")
-    
+
     app.run(host=host, port=port, debug=debug)
-    
+
     logging.info(f"Stopping Server.")

@@ -16,13 +16,28 @@ import subprocess
 import phonenumbers
 import datetime
 import app.constants as const
-from dateutil import parser
 from app.sam import sam
 from app.map import maps
 from app.db import db
+from app.redis import redis as store
 from ukpostcodeutils import validation
 from werkzeug.utils import secure_filename
+from functools import wraps
 
+def cache_key(path, *args, **kwargs):
+    key = tuple([path] + ['?'] + [str(v) for v in sorted(*args)] + [(k, kwargs[k]) for k in sorted(kwargs.keys())])
+    return hash(key)
+
+def cached(func):
+    def wrapper(*args, **kwargs):
+        path = func.__qualname__
+        key = cache_key(path, *args, **kwargs)
+        if store.cache.has(key):
+            return store.cache.get(key)
+        result = func(*args, **kwargs)
+        store.cache.add(key, result)
+        return result
+    return wrapper
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +93,13 @@ class SamExchange(object):
     def __repr__(self):
         return "<exchange: {}>".format(self.exchange)
 
+    @cached
     @staticmethod
     def find_by_query(query):
         url = "https://availability.samknows.com/broadband/exchange_search"
         return sam.request(method="POST", query=query, url=url, scraper=sam.scrape_info)
 
+    @cached
     @staticmethod
     def find_by_exchange_code(exchange_code):
         url = f"https://availability.samknows.com/broadband/exchange/{exchange_code}"
@@ -130,14 +147,18 @@ class Product(object):
     """
 
     def __init__(self, **kwargs):
-        self.usage = kwargs.get("limit", None)
+        self.limit = kwargs.get("limit", None)
 
     def __repr__(self):
         return "<limit: {}>".format(self.limit)
 
-    @staticmethod
-    def find_by_limit(limit):
-        return db.execute(const.SP_EXCHANGE_PRODUCT_FIND_BY_LIMIT, limit, const.PRODUCT_STATUS_AVAILABLE)        
+    @cached
+    @staticmethod    
+    def find_by_limit(limit):        
+        proc = const.SP_EXCHANGE_PRODUCT_FIND_BY_LIMIT
+        args = limit, const.PRODUCT_STATUS_AVAILABLE        
+        results = db.execute(proc, *args)                
+        return results
 
 
 class Location(object):
@@ -151,6 +172,7 @@ class Location(object):
     def __repr__(self):
         return "<postcode: {}>".format(self.postcode)
 
+    @cached
     @staticmethod
     def find_by_postcode(postcode):
         return maps.request(postcode)
