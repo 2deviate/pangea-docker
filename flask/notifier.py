@@ -166,6 +166,7 @@ async def process_query(query, dry_run):
     schema = [
         'file_query_id',
         'cli',
+        'site_postcode',
         'exchange_name',
         'exchange_code',
         'exchange_postcode',
@@ -177,8 +178,8 @@ async def process_query(query, dry_run):
     query = { k:query[i] for i, k in enumerate(schema) }
 
     cli = query['cli']
+    site_postcode = query['site_postcode']
     exchange_code = query['exchange_code']
-    exchange_post_code = query['exchange_postcode']
     avg_data_usage = query['avg_data_usage']
     file_stage_fk = query['file_stage_fk']
     
@@ -190,7 +191,7 @@ async def process_query(query, dry_run):
     #data = await request_data(url, **query)
     t1 = request_data(url, **query)
     
-    criterion = cli if cli else exchange_post_code if exchange_post_code else exchange_code
+    criterion = cli if cli else site_postcode if site_postcode else exchange_code
     url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/sam/exchange/info?query={criterion}"
     #data = await request_data(url, **data)
     t2 = request_data(url, **query)
@@ -225,7 +226,8 @@ async def process_query(query, dry_run):
 
     args = (
         data.get('file_query_id'),
-        data.get('cli', const.NO_DATA_RESULTS_FOUND),
+        data.get('cli', const.NOT_PROVIDED),
+        data.get('site_postcode', const.NOT_PROVIDED),
         data.get('exchange_name', const.NO_DATA_RESULTS_FOUND),
         data.get('exchange_code', const.NO_DATA_RESULTS_FOUND),
         data.get('exchange_postcode', const.NO_DATA_RESULTS_FOUND),

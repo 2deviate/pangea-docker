@@ -12,7 +12,7 @@ services:
       - MYSQL_DATABASE
       - MYSQL_HOST
       - MYSQL_PORT
-      - MYSQL_ROOT_PASSWORD
+      - MYSQL_ROOT_PASSWORD      
     command: '--default-authentication-plugin=mysql_native_password'
     volumes:
       - db-data:/var/lib/mysql
@@ -39,7 +39,14 @@ services:
       - FLASK_APP_TEMPLATE_NAME
       - FLASK_APP_UPLOAD_FOLDER
       - FLASK_APP_DOWNLOAD_FOLDER 
-      - FLASK_FILE_UPLOAD_MAX_LENGTH      
+      - FLASK_FILE_UPLOAD_MAX_LENGTH    
+      - CACHE_REDIS_HOST
+      - CACHE_REDIS_PORT
+      - CACHE_REDIS_PASSWORD
+      - CACHE_REDIS_DB
+      - CACHE_REDIS_URL
+      - CACHE_TYPE
+      - CACHE_DEFAULT_TIMEOUT
       - MYSQL_USER
       - MYSQL_PASSWORD
       - MYSQL_DATABASE
@@ -77,7 +84,7 @@ services:
     environment: 
       - PROXY_SERVER
     ports:
-      - "80:80"
+      - '80:80'
     depends_on:
       - server
     healthcheck:
@@ -89,13 +96,17 @@ services:
     networks:
       - frontend
   redis:
-      build: redis
-      image: 2deviate/pangea-redis:v1.0
-      ports:
-        - "6379:6379"
-      volumes:
-        - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
-        - /mnt/xvdb/redis:/usr/local/etc/redis
+    build: redis
+    image: 2deviate/pangea-redis:v1.0
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - /mnt/xvdb/redis:/usr/local/etc/redis
+    restart: always
+    networks:
+      - backend
+      - frontend
 volumes:
   db-data:
 networks:

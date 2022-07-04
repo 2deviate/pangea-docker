@@ -14,7 +14,7 @@ from flask_marshmallow import Marshmallow
 from . import api
 from .db import db
 from .map import maps
-from .redis import redis
+from .redis import store
 
 def create_app(config):
     app = Flask(__name__, static_url_path="/static/")            
@@ -29,6 +29,6 @@ def create_app(config):
     # initialize api app
     api.init_app(app)            
     # setup caching
-    redis.init_app(app)      
+    store.init_app(app)      
     # return instance  
     return app

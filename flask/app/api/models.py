@@ -19,27 +19,26 @@ import app.constants as const
 from app.sam import sam
 from app.map import maps
 from app.db import db
-from app.redis import redis as store
+from app.redis import store
 from ukpostcodeutils import validation
 from werkzeug.utils import secure_filename
-from functools import wraps
+
+logger = logging.getLogger(__name__)
 
 def cache_key(path, *args, **kwargs):
-    key = tuple([path] + ['?'] + [str(v) for v in sorted(*args)] + [(k, kwargs[k]) for k in sorted(kwargs.keys())])
-    return hash(key)
+    key = str(tuple([path] + ['?'] + [str(v) for v in sorted(args)] + [(k, kwargs[k]) for k in sorted(kwargs.keys())]))
+    return key
 
 def cached(func):
     def wrapper(*args, **kwargs):
         path = func.__qualname__
         key = cache_key(path, *args, **kwargs)
-        if store.cache.has(key):
-            return store.cache.get(key)
+        if store.get(key):
+            return store.get(key)
         result = func(*args, **kwargs)
-        store.cache.add(key, result)
+        store.set(key, result)
         return result
     return wrapper
-
-logger = logging.getLogger(__name__)
 
 
 class FttpExchange(object):
@@ -223,33 +222,28 @@ class FileStage(object):
             try:
                 #CLI,POST_CODE,EXCHANGE_CODE,DATA_USAGE
                 self.cli = self.args[0] if self.args[0] else None
-                self.exchange_post_code = self.args[1] if self.args[1] else None                
+                self.site_postcode = self.args[1] if self.args[1] else None
                 self.exchange_code = self.args[2] if self.args[2] else None
                 self.avg_data_usage = self.args[3] if self.args[3] else None                                
                 self.file_stage_fk = self.args[4] if self.args[4] else None
                 # implemented place holder fields
-                self.stop_sell_date = None
-                self.exchange_product_fk = None
             except Exception as err:
                 logger.error(f"Row init exception,", err)
                 raise
 
         def values(self):
             cli = str(self.cli) if self.cli else None                        
-            exchange_name = None  # PAN-17. Removed as deemed unecessary
-            exchange_code = str(self.exchange_code) if self.exchange_code else None
-            exchange_post_code = str(self.exchange_post_code) if self.exchange_post_code else None
+            site_postcode = str(self.site_postcode) if self.site_postcode else None
+            exchange_code = str(self.exchange_code) if self.exchange_code else None            
             avg_data_usage = 0
             if self.avg_data_usage:
                 try:
                     avg_data_usage = int(self.avg_data_usage)
                 except ValueError as err:
-                    logger.error(f"Unable to parse avg_data_usage as int, {self.args=}", err)                    
-                    pass
-            stop_sell_date = None            
-            file_stage_fk = self.file_stage_fk
-            exchange_product_fk = self.exchange_product_fk
-            return (cli, exchange_name, exchange_code, exchange_post_code, avg_data_usage, stop_sell_date, file_stage_fk, exchange_product_fk)
+                    logger.warning(f"Unable to parse avg_data_usage as int, {self.args=}", err)                    
+                    pass            
+            file_stage_fk = self.file_stage_fk            
+            return (cli, site_postcode, None, exchange_code, None, avg_data_usage, None, file_stage_fk, None)
 
     @staticmethod
     def find_by_status(status):        

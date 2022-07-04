@@ -52,9 +52,10 @@ CREATE INDEX idx_3 ON file_stage (file_stage_status_fk);
 CREATE TABLE IF NOT EXISTS file_query (
     file_query_id INT AUTO_INCREMENT PRIMARY KEY,
     cli VARCHAR(50) NULL,
+    site_postcode VARCHAR(50) NULL,
     exchange_name VARCHAR(50) NULL,
     exchange_code VARCHAR(50) NULL,
-    exchange_post_code VARCHAR(50) NULL,
+    exchange_postcode VARCHAR(50) NULL,
     avg_data_usage INT NULL,    
     stop_sell_date VARCHAR(50) NULL,    
     file_stage_fk INT NOT NULL,
@@ -103,13 +104,14 @@ DELIMITER ;
 -- File Query Procs
 DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_update_file_query;
-CREATE PROCEDURE sp_update_file_query(IN file_query_id INT, IN cli VARCHAR(50), IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_post_code VARCHAR(50), IN avg_data_usage INT, IN stop_sell_date VARCHAR(50), IN exchange_product_id INT)
+CREATE PROCEDURE sp_update_file_query(IN file_query_id INT, IN cli VARCHAR(50), IN site_postcode VARCHAR(50), IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_postcode VARCHAR(50), IN avg_data_usage INT, IN stop_sell_date VARCHAR(50), IN exchange_product_id INT)
 BEGIN
     UPDATE file_query f
     SET f.cli=cli,
+        f.site_postcode=site_postcode,
         f.exchange_name=exchange_name,
         f.exchange_code=exchange_code,
-        f.exchange_post_code=exchange_post_code,
+        f.exchange_postcode=exchange_postcode,
         f.avg_data_usage=avg_data_usage,
         f.stop_sell_date=stop_sell_date,
         f.exchange_product_fk=exchange_product_id
@@ -187,9 +189,10 @@ DROP PROCEDURE IF EXISTS sp_get_recommendations;
 CREATE PROCEDURE sp_get_recommendations(IN file_stage_id INT)
 BEGIN
     SELECT q.cli,
+        q.site_postcode,
         q.exchange_name,
         q.exchange_code,
-        q.exchange_post_code,
+        q.exchange_postcode,
         q.avg_data_usage,
         q.stop_sell_date,    
         p.exchange_product_name,
@@ -291,13 +294,14 @@ DELIMITER ;
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_insert_file_query;
-CREATE PROCEDURE sp_insert_file_query (IN cli VARCHAR(50), IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_post_code VARCHAR(50), IN avg_data_usage INT, IN stop_sell_date VARCHAR(50), IN file_stage_fk INT, IN exchange_product_fk INT, OUT file_query_id INT)
+CREATE PROCEDURE sp_insert_file_query (IN cli VARCHAR(50), IN site_postcode VARCHAR(50), IN exchange_name VARCHAR(50), IN exchange_code VARCHAR(50), IN exchange_postcode VARCHAR(50), IN avg_data_usage INT, IN stop_sell_date VARCHAR(50), IN file_stage_fk INT, IN exchange_product_fk INT, OUT file_query_id INT)
 BEGIN
     INSERT INTO file_query (
         cli,
+        site_postcode,
         exchange_name,
         exchange_code,
-        exchange_post_code,
+        exchange_postcode,
         avg_data_usage,    
         stop_sell_date,    
         file_stage_fk,
@@ -305,9 +309,10 @@ BEGIN
         ) 
         VALUES (
         cli,
+        site_postcode,
         exchange_name,
         exchange_code,
-        exchange_post_code,
+        exchange_postcode,
         avg_data_usage,    
         stop_sell_date,    
         file_stage_fk,

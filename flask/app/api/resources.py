@@ -40,12 +40,6 @@ from app.utils import response_json
 
 logger = logging.getLogger(__name__)
 
-# def cache_key():
-#     args = request.args
-#     key = request.path + '?' + urllib.urlencode(
-#         (k,v) for k in sorted(args) for v in sorted(args.getlist[k])
-#     )
-#     return key
 
 class HealthAPI(Resource):
     """

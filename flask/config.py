@@ -39,10 +39,14 @@ class Config(object):
     FLASK_APP_DOWNLOAD_FOLDER = os.getenv("FLASK_APP_DOWNLOAD_FOLDER", None)    
     FLASK_FILE_UPLOAD_MAX_LENGTH = os.getenv("FLASK_APP_DOWNLOAD_FOLDER", None)
 
-    # Redis Cache
-    REDIS_CACHE_DEBUG = os.getenv("REDIS_CACHE_DEBUG", True)
-    REDIS_CACHE_TYPE = os.getenv("REDIS_CACHE_TYPE", "SimpleCache")
-    REDIS_CACHE_DEFAULT_TIME = os.getenv("CACHE_DEFAULT_TIMEOUT", 300)
+    # Cache Redis
+    CACHE_REDIS_HOST = os.getenv("CACHE_REDIS_HOST", None)
+    CACHE_REDIS_PORT = os.getenv("CACHE_REDIS_PORT", None)
+    CACHE_REDIS_PASSWORD = os.getenv("CACHE_REDIS_PASSWORD", None)
+    CACHE_REDIS_DB = os.getenv("CACHE_REDIS_DB", None)
+    CACHE_REDIS_URL = os.getenv("CACHE_REDIS_URL", None)    
+    CACHE_TYPE = os.getenv("CACHE_TYPE", None)
+    CACHE_DEFAULT_TIMEOUT = os.getenv("CACHE_DEFAULT_TIMEOUT", None)
 
     # Local MySql configuration (NOT AWS RDS)
     MYSQL_USER = os.getenv("MYSQL_USER", None)
@@ -50,6 +54,7 @@ class Config(object):
     MYSQL_HOST = os.getenv("MYSQL_HOST", None)
     MYSQL_PORT = os.getenv("MYSQL_PORT", None)
     MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", None)
+    MYSQL_ROOT_PASSWORD = os.getenv("MYSQL_DATABASE", None)
 
     # Docker Service configurations
     DOCKER_DB_NAME = os.getenv("DOCKER_DB_NAME", None)
@@ -78,13 +83,14 @@ class Config(object):
     
     EMAIL_TEMPLATE_SCHEMA = {
             "cli": "CLI",
+            "site_postcode": "Site Post Code",
             "exchange_name": "Exchange Name",
             "exchange_code": "Exchange Code",
-            "exchange_post_code": "Exchange Post Code",
+            "exchange_postcode": "Exchange Post Code",
             "avg_data_usage": "Average Data Usage (MB)",
             "stop_sell_date": "Stop Sell Date",    
             "exchange_product_name": "Product Name",
-            "exchange_product_limit": "Product Limit (MB)" ,
+            "exchange_product_limit": "Product Limit" ,
             "exchange_product_unit": "Product Unit",
             "exchange_product_url": "Recommendation",    
             "exchange_product_price": "Price (GBP)",
