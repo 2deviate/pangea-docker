@@ -1,0 +1,11 @@
+name: pangea-docker
+on: push
+jobs:
+  test:
+    runs-on: alpine:latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build the stack
+        run: docker-compose --env-file ./config/.env.dev up -d
+      - name: Pangea Test
+        run: docker run 2deviate/pangea-server:v1.0 curl -s --retry 10 --retry-connrefused http://localhost/api/v1.0/pangea/health
