@@ -159,6 +159,4 @@ passwords.txt
 # Project folder/ files
 
 *.csv
-
-config/
-
+.env.*
