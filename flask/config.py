@@ -74,6 +74,7 @@ class Config(object):
     ### Email Template
     EMAIL_FROM_ADDRESS = os.getenv("EMAIL_FROM_ADDRESS", None)
     EMAIL_CC_ADDRESSES = os.getenv("EMAIL_CC_ADDRESSES", None)
+    EMAIL_BCC_ADDRESSES = os.getenv("EMAIL_BCC_ADDRESSES", None)
     EMAIL_ATTACHMENT = os.getenv("EMAIL_ATTACHMENT", None)
     EMAIL_SUBJECT = os.getenv("EMAIL_SUBJECT", None)
 

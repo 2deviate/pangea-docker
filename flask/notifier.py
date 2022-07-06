@@ -27,7 +27,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-
+from email_validator import validate_email, EmailNotValidError
 
 logger = logging.getLogger(__name__)
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -47,6 +47,7 @@ docker_proxy_name = None
 
 email_from_address = None
 email_cc_address = None
+email_bcc_address = None
 email_attachment = None
 email_subject = None
 
@@ -77,7 +78,9 @@ def get_data(method, url=None, headers=None, body=None, **attrs):
     return result
 
 
-def send_mail(from_addr, to_addrs, cc_addrs, df):
+def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
+
+    logger.info(f"sending mail, {from_addr=}, {to_addrs=}, {cc_addrs=}, {bcc_addrs=}")
 
     text = email_template_text if email_template_text else ""
     html = email_template_html if email_template_html else df.to_html(index=False)
@@ -94,7 +97,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, df):
 
     if not df.empty:
         with tempfile.NamedTemporaryFile(suffix=".csv") as tmp:            
-            logger.info(f"created tmpfile {tmp.name=}")                
+            logger.info(f"created tmp file {tmp.name=}")                
             df.to_csv(tmp, index=False)
             fp = open(tmp.name, "rb")
             attachment = MIMEApplication(fp.read(), _subtype="csv")
@@ -102,25 +105,41 @@ def send_mail(from_addr, to_addrs, cc_addrs, df):
             attachment.add_header("Content-Disposition", "attachment", filename=email_attachment)    
             msg_mixed.attach(attachment)
 
+    to_addrs = [addrs for addrs in set(to_addrs) if validate_addrs(addrs) is not None]
+    cc_addrs = [addrs for addrs in set(cc_addrs) if validate_addrs(addrs) is not None]
+    bcc_addrs = [addrs for addrs in set(bcc_addrs) if validate_addrs(addrs) is not None]
+    
     msg_mixed["From"] = from_addr
-    msg_mixed["To"] = "".join(to_addrs) if isinstance(to_addrs, list) else to_addrs
-    msg_mixed["CC"] = ",".join(cc_addrs) if isinstance(cc_addrs, list) else cc_addrs
-    msg_mixed["Subject"] = email_subject
+    msg_mixed["To"] = ",".join(to_addrs)
+    msg_mixed["Cc"] = ",".join(cc_addrs)
+    msg_mixed["Bcc"] = ",".join(bcc_addrs)
+    msg_mixed["Subject"] = email_subject    
 
     try:
+        logger.info(f"login to smpt sever {smtp_host=}, {smtp_port=}") 
         smtp_obj = smtplib.SMTP_SSL(host=smtp_host, port=smtp_port)
         smtp_obj.ehlo()
         smtp_obj.login(smtp_user, smtp_password)
-        smtp_obj.sendmail(from_addr, to_addrs, msg_mixed.as_string())
+        logger.debug(f"send mail {from_addr=}, {to_addrs=}, envelope={msg_mixed.as_string()}") 
+        smtp_obj.sendmail(from_addr, (to_addrs+cc_addrs+bcc_addrs), msg_mixed.as_string())
         smtp_obj.quit()
     except Exception as err:
-        logger.error(err, exc_info=err)
+        logger.error(f"Error sending mail", err)        
         raise
 
+def validate_addrs(email):
+    if email is None or not isinstance(email, str) or len(email) == 0:
+        logger.warning(f"Invalid email address, removing {email=}")
+        return None
+    try:        
+        email = validate_email(email).email
+    except EmailNotValidError as err:        
+        logger.error(f"Error parsing email address, {email=}", err)
+        return None
+    return email
 
 def normalize_query(query: str) -> str:
     return re.sub("\s\s+", " ", query).strip()
-
 
 def execute_query(query):
     query = normalize_query(query)
@@ -293,7 +312,7 @@ async def process_uploads(dry_run):
 
 
 def process_notification(notification, dry_run):
-    file_stage_id, email_address, *_ = notification
+    file_stage_id, email_to_address, *_ = notification
     try:
         proc, args = const.SP_GET_RECOMMENDATIONS, file_stage_id
         recommedations, _ = db.execute(proc, args)
@@ -302,20 +321,21 @@ def process_notification(notification, dry_run):
         logger.info(f"Error executing  {proc=}, {args=}, {dry_run=}")
         raise
     try:
-        df = pandas.DataFrame()
-        cc = email_cc_address
+        df = pandas.DataFrame()        
         from_addr = email_from_address
-        to_addrs = email_address        
+        to_addrs = email_to_address.split(',')
+        cc = email_cc_address.split(',')
+        bcc = email_bcc_address.split(',')
         try:
             df_cols = email_template_schema.values()
             df = pandas.DataFrame(recommedations, columns=df_cols)
         except Exception as err2:
             logger.error(f"Cannot form attachment, ignoring, {args=}", err2)
             pass            
-        logger.info(f"sending mail {from_addr=}, {to_addrs=}, {cc=}")
+        logger.info(f"sending mail {from_addr=}, {to_addrs=}, {cc=}, {bcc=}")
         args = (file_stage_id, const.FILE_STATUS_COMPLETE)
         if not dry_run:
-            send_mail(from_addr, to_addrs, cc, df=df)
+            send_mail(from_addr, to_addrs, cc, bcc, df=df)
             set_status(*args)
         logger.info(f"sent mail {args=}, {df=}")
         if not dry_run:
@@ -327,7 +347,7 @@ def process_notification(notification, dry_run):
         if not dry_run:
             args = (file_stage_id, const.FILE_STATUS_EXCEPTION)
             set_status(*args)
-        logger.error(f"Error sending mail, {notification=}, {email_address=}", err1)
+        logger.error(f"Error sending mail, {notification=}, {email_to_address=}", err1)
         raise
 
 
@@ -373,6 +393,7 @@ if __name__ == "__main__":
     # setup smtp and email
     email_from_address = app.config["EMAIL_FROM_ADDRESS"]
     email_cc_address = app.config["EMAIL_CC_ADDRESSES"]
+    email_bcc_address = app.config["EMAIL_BCC_ADDRESSES"]
     email_attachment = app.config["EMAIL_ATTACHMENT"]
     email_subject = app.config["EMAIL_SUBJECT"]
     smtp_user = app.config["SMTP_USER"]
