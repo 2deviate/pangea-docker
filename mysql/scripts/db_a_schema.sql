@@ -260,10 +260,10 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS sp_exchange_product_find_by_limit;
 CREATE PROCEDURE sp_exchange_product_find_by_limit(IN exchange_product_limit INT, IN exchange_product_status VARCHAR(50))
 BEGIN    
-    SELECT * FROM exchange_product p1 WHERE p1.exchange_product_limit >= exchange_product_limit AND p1.exchange_product_status_fk=exchange_product_status
+    SELECT * FROM exchange_product p1 WHERE (p1.exchange_product_limit >= exchange_product_limit) AND (p1.exchange_product_status_fk=exchange_product_status) AND (p1.exchange_product_default<>1)
     UNION ALL 
     SELECT * FROM exchange_product p2
-    WHERE NOT EXISTS (SELECT * FROM exchange_product p3 WHERE p3.exchange_product_limit >= exchange_product_limit AND p3.exchange_product_status_fk=exchange_product_status) 
+    WHERE NOT EXISTS (SELECT * FROM exchange_product p1 WHERE (p1.exchange_product_limit >= exchange_product_limit) AND (p1.exchange_product_status_fk=exchange_product_status) AND (p1.exchange_product_default<>1)) 
     AND p2.exchange_product_default=1 AND p2.exchange_product_status_fk=exchange_product_status LIMIT 1;
 END$$
 DELIMITER ;
