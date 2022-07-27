@@ -17,7 +17,7 @@ from .map import maps
 from .redis import store
 
 def create_app(config):
-    app = Flask(__name__, static_url_path="/static/")            
+    app = Flask(__name__, static_folder="./static", template_folder="./templates")
     # load configurations
     app.config.from_object(config)        
     # setup serializers

@@ -1,0 +1,332 @@
+{
+  "openapi" : "3.0.0",
+  "servers" : [ {
+    "description" : "SwaggerHub API Auto Mocking",
+    "url" : "https://virtserver.swaggerhub.com/2DEVIATE-LTD/Pangea/1.0.0"
+  }, {
+    "description" : "Local Development Server",
+    "url" : "http://localhost:5000/api/v1.0/"
+  }, {
+    "description" : "Docker Container Server/",
+    "url" : "http://localhost:8000/api/v1.0/"
+  }, {
+    "description" : "Production Container Server",
+    "url" : "http://localhost/api/v1.0/"
+  } ],
+  "info" : {
+    "description" : "This is the Pangea exchange server API",
+    "version" : "1.0.0",
+    "title" : "Pangea Exchange API",
+    "termsOfService" : "http://pangea.io/terms/",
+    "contact" : {
+      "email" : "dev@pangea.io"
+    },
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "tags" : [ {
+    "name" : "Health",
+    "description" : "Server health check",
+    "externalDocs" : {
+      "description" : "Find out more",
+      "url" : "http://swagger.io"
+    }
+  }, {
+    "name" : "Exchange",
+    "description" : "BT OpenReach Exchanges"
+  }, {
+    "name" : "Sam",
+    "description" : "SamKnows Exchange Info",
+    "externalDocs" : {
+      "description" : "SamKnows Exchange",
+      "url" : "http://swagger.io"
+    }
+  } ],
+  "paths" : {
+    "/pangea/health" : {
+      "get" : {
+        "tags" : [ "Health" ],
+        "summary" : "Check health status of server",
+        "description" : "Check the health of the service",
+        "operationId" : "getHealth",
+        "responses" : {
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/pangea/fttp/exchanges" : {
+      "get" : {
+        "tags" : [ "Exchange" ],
+        "summary" : "List all BT Openreach exchanges",
+        "description" : "List Openreach exchanges",
+        "operationId" : "getExchanges",
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "allOf" : [ {
+                      "$ref" : "#/definitions/ExchangeModel"
+                    } ]
+                  }
+                }
+              }
+            }
+          },
+          "405" : {
+            "description" : "Invalid input"
+          }
+        }
+      }
+    },
+    "/pangea/fttp/exchange/site/{site_no}" : {
+      "get" : {
+        "tags" : [ "Exchange" ],
+        "summary" : "Get exchange information by Site Id",
+        "description" : "Obtain information about a particular site, pass in site no.",
+        "operationId" : "getExchangeSite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "site_no",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "minimum" : 1
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/definitions/ExchangeModel"
+                }
+              }
+            }
+          },
+          "405" : {
+            "description" : "Invalid input"
+          }
+        }
+      }
+    },
+    "/pangea/fttp/exchange/name/{exchange_name}" : {
+      "get" : {
+        "tags" : [ "Exchange" ],
+        "summary" : "Get exchange information by name",
+        "description" : "Obtain information about a particular site, pass in site no.",
+        "operationId" : "getExchangeName",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "exchange_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/definitions/ExchangeModel"
+                }
+              }
+            }
+          },
+          "405" : {
+            "description" : "Invalid input"
+          }
+        }
+      }
+    },
+    "/pangea/fttp/exchange/code/{exchange_code}" : {
+      "get" : {
+        "tags" : [ "Exchange" ],
+        "summary" : "Get exchange information by exchange code",
+        "description" : "Obtain information about a particular site, pass in site no.",
+        "operationId" : "getExchangeCode",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "exchange_code",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/definitions/ExchangeModel"
+                }
+              }
+            }
+          },
+          "405" : {
+            "description" : "Invalid input"
+          }
+        }
+      }
+    },
+    "/pangea/fttp/exchange/location/{exchange_location}" : {
+      "get" : {
+        "tags" : [ "Exchange" ],
+        "summary" : "Get exchange information by exchange location",
+        "description" : "Obtain information about a particular site, pass in site no.",
+        "operationId" : "getExchangeLocation",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "exchange_location",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/definitions/ExchangeModel"
+                }
+              }
+            }
+          },
+          "405" : {
+            "description" : "Invalid input"
+          }
+        }
+      }
+    },
+    "/pangea/sam/exchange/info" : {
+      "get" : {
+        "tags" : [ "Sam" ],
+        "summary" : "SamKnows Exchange Info",
+        "description" : "",
+        "operationId" : "getExchangeInfo",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "exchange",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "allOf" : [ {
+                      "$ref" : "#/definitions/SamKnowsExchangeModel"
+                    } ]
+                  }
+                }
+              }
+            }
+          },
+          "405" : {
+            "description" : "Invalid input"
+          }
+        }
+      }
+    }
+  },
+  "definitions" : {
+    "ExchangesModel" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/definitions/ExchangeModel"
+      }
+    },
+    "ExchangeModel" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "integer",
+          "example" : 1
+        },
+        "implementation_date" : {
+          "type" : "string",
+          "example" : "2020-12-01 00:00:00"
+        },
+        "site_no" : {
+          "type" : "string",
+          "example" : "1"
+        },
+        "tranche" : {
+          "type" : "string",
+          "example" : "Trial notification"
+        },
+        "last_amended_date" : {
+          "type" : "string",
+          "example" : "2019-12-01"
+        },
+        "exchange_name" : {
+          "type" : "string",
+          "example" : "Salisbury"
+        },
+        "created_at" : {
+          "type" : "string",
+          "example" : "2022-07-06T10:54:06"
+        },
+        "exchange_code" : {
+          "type" : "string",
+          "example" : "STSALIS"
+        },
+        "exchange_location" : {
+          "type" : "string",
+          "example" : "Salisbury"
+        }
+      }
+    },
+    "SamKnowsModel" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/definitions/SamKnowsExchangeModel"
+      }
+    },
+    "SamKnowsExchangeModel" : {
+      "type" : "object",
+      "properties" : {
+        "exchange_name" : {
+          "type" : "string",
+          "example" : "Londonderry Brookhall"
+        },
+        "exchange_county" : {
+          "type" : "string",
+          "example" : "Derry City"
+        },
+        "exchange_code" : {
+          "type" : "string",
+          "example" : "NIBRH"
+        },
+        "exchange_region" : {
+          "type" : "string",
+          "example" : "Northern Ireland"
+        }
+      }
+    }
+  }
+}

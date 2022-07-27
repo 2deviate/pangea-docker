@@ -12,8 +12,10 @@
         H(Sam Knows Exchange API)        
         I(Cross Reference Openreach FFFT)
         J(Present Results)
+        X((Start))
+        Y((Stop))
         
-        Start --> A        
+        X --> A        
         A --> |submit|B
         A --> |submit|C
         A --> |sumbit|D
@@ -29,7 +31,7 @@
         H --> |exch. code, location|I
         
         I --> J
-        J --> Stop
+        J --> Y
         
 
         

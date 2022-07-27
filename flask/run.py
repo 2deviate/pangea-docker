@@ -11,6 +11,7 @@ import os
 import logging
 from config import configs
 from app import create_app
+from flask import render_template
 
 env = os.environ.get("FLASK_ENV", "dev")
 
@@ -34,8 +35,11 @@ logging.basicConfig(
 
 @app.route("/")
 def get_index():
-    return app.send_static_file("index.html")
+    return render_template("index.html")
 
+@app.route('/api/docs')
+def get_docs():    
+    return render_template('swaggerui.html')
 
 if __name__ == "__main__":
     logging.info(f"Flask configuration {config=}")
