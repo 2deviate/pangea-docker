@@ -82,11 +82,15 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
 
     logger.info(f"sending mail, {from_addr=}, {to_addrs=}, {cc_addrs=}, {bcc_addrs=}")
 
-    text = email_template_text if email_template_text else ""
-    html = email_template_html if email_template_html else df.to_html(index=False)
+    text_template = email_template_text if email_template_text else ""
+    html_template = email_template_html if email_template_html else df.columns()
 
-    text_part = MIMEText(text, "plain")
-    html_part = MIMEText(html, "html")
+    text_subject = text_template.strip()
+    html_columns = html_template.split(',')
+    html_body = df.to_html(columns=html_columns, index=False)
+
+    text_part = MIMEText(text_subject, "plain")
+    html_part = MIMEText(html_body, "html")
 
     msg_alternative = MIMEMultipart("alternative")
     msg_alternative.attach(text_part)
@@ -97,8 +101,8 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
 
     if not df.empty:
         with tempfile.NamedTemporaryFile(suffix=".csv") as tmp:            
-            logger.info(f"created tmp file {tmp.name=}")                
-            df.to_csv(tmp, index=False)
+            logger.info(f"created tmp file {tmp.name=}")
+            df.to_csv(tmp, columns=html_columns, index=False)
             fp = open(tmp.name, "rb")
             attachment = MIMEApplication(fp.read(), _subtype="csv")
             fp.close()
@@ -127,19 +131,21 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
         logger.error(f"Error sending mail", err)        
         raise
 
-def validate_addrs(email):
+def validate_addrs(email):    
     if email is None or not isinstance(email, str) or len(email) == 0:
         logger.warning(f"Invalid email address, removing {email=}")
         return None
     try:        
-        email = validate_email(email).email
+        stripped = email.strip()
+        return validate_email(stripped).email
     except EmailNotValidError as err:        
         logger.error(f"Error parsing email address, {email=}", err)
         return None
-    return email
+
 
 def normalize_query(query: str) -> str:
     return re.sub("\s\s+", " ", query).strip()
+
 
 def execute_query(query):
     query = normalize_query(query)

@@ -10,9 +10,15 @@ DROP TABLE IF EXISTS exchange_decom;
 DROP TABLE IF EXISTS exchange_product;
 DROP TABLE IF EXISTS exchange_product_status;
 DROP TABLE IF EXISTS file_stage_status;
+DROP TABLE IF EXISTS exchange_product_term;
 
 CREATE TABLE IF NOT EXISTS exchange_product_status (    
     exchange_product_status_id VARCHAR(50) PRIMARY KEY    
+);
+
+
+CREATE TABLE IF NOT EXISTS exchange_product_term (    
+    exchange_product_term_id INT PRIMARY KEY    
 );
 
 CREATE TABLE IF NOT EXISTS exchange_product (
@@ -23,9 +29,11 @@ CREATE TABLE IF NOT EXISTS exchange_product (
     exchange_product_url VARCHAR(250) NOT NULL,    
     exchange_product_price DECIMAL(19,2) DEFAULT(0) NOT NULL,
     exchange_product_default BIT(1) DEFAULT(0) NOT NULL,
-    exchange_product_status_fk VARCHAR(50) NOT NULL,
+    exchange_product_status_fk VARCHAR(50) NOT NULL,    
+    exchange_product_term_fk INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (exchange_product_status_fk) REFERENCES exchange_product_status(exchange_product_status_id)    
+    FOREIGN KEY (exchange_product_status_fk) REFERENCES exchange_product_status(exchange_product_status_id)
+    FOREIGN KEY (exchange_product_term_fk) REFERENCES exchange_product_term(exchange_product_term_id)
 );
 
 CREATE INDEX idx_1 ON exchange_product (exchange_product_default);
@@ -200,6 +208,7 @@ BEGIN
         p.exchange_product_unit,
         p.exchange_product_url,    
         p.exchange_product_price,
+        p.exchange_product_term_fk,
         f.created_at
     FROM file_stage f 
     INNER JOIN file_query q ON q.file_stage_fk=f.file_stage_id

@@ -5,6 +5,14 @@ INSERT INTO exchange_product_status (exchange_product_status_id)
 VALUES ("Available");
 INSERT INTO exchange_product_status (exchange_product_status_id)
 VALUES ("Unavailable");
+-- PRODUCT TERM
+INSERT INTO exchange_product_term (exchange_product_term_id)
+VALUES (12);
+INSERT INTO exchange_product_term (exchange_product_term_id)
+VALUES (24);
+INSERT INTO exchange_product_term (exchange_product_term_id)
+VALUES (36);
+
 -- FILE STATUS
 INSERT INTO file_stage_status (file_stage_status_id)
 VALUES ("New");
@@ -26,71 +34,58 @@ INSERT INTO exchange_product (
     exchange_product_limit,
     exchange_product_unit,
     exchange_product_url,
-    exchange_product_price,
+    exchange_product_price,    
     exchange_product_default,
-    exchange_product_status_fk
+    exchange_product_status_fk,
+    exchange_product_term_fk
 )
 VALUES (
-    "INSTANET",
-    300,
-    "GB",
-    "https://pangea-group.net/pangea-5g-connectivity-enterprise-router/2",    
-    900.00,
-    1,
-    "Available"
+    "4G Cat 4 PSTN Replacement Single Net (O2 / VF / EE / 3) incl Static IP",
+    0.5,
+    "MB",
+    "https://pangea-group.net/pangea-5g-connectivity-enterprise-router/2",        
+    16.70,    
+    0,
+    "Available",
+    12
 );
 INSERT INTO exchange_product (
     exchange_product_name,
     exchange_product_limit,
     exchange_product_unit,
-    exchange_product_url,
-    exchange_product_price,
+    exchange_product_url,    
+    exchange_product_price,    
     exchange_product_default,
-    exchange_product_status_fk
+    exchange_product_status_fk,
+    exchange_product_term_fk
 )
 VALUES (
-    "GRAVENET",
-    300,
-    "GB",
+    "4G Cat 4 PSTN Replacement Single Net (O2 / VF / EE / 3) incl Static IP",
+    0.5,
+    "MB",
     "https://pangea-group.net/pangea-5g-connectivity-enterprise-router/2",    
-    900.00,
+    9.50,
     0,
-    "Available"
+    "Available",
+    24
 );
 INSERT INTO exchange_product (
     exchange_product_name,
     exchange_product_limit,
     exchange_product_unit,
-    exchange_product_url,
-    exchange_product_price,
+    exchange_product_url,    
+    exchange_product_price,    
     exchange_product_default,
-    exchange_product_status_fk
+    exchange_product_status_fk,
+    exchange_product_term_fk    
 )
 VALUES (
-    "INSTANET",
-    1000,
-    "GB",
+    "4G Cat 4 PSTN Replacement Single Net (O2 / VF / EE / 3) incl Static IP",
+    0.5,
+    "MB",
     "https://pangea-group.net/pangea-5g-connectivity-enterprise-router/2",    
-    1200.00,
+    7.10,
     0,
-    "Available"
+    "Available",
+    36
 );
-INSERT INTO exchange_product (
-    exchange_product_name,
-    exchange_product_limit,
-    exchange_product_unit,
-    exchange_product_url,
-    exchange_product_price,
-    exchange_product_default,
-    exchange_product_status_fk
-)
-VALUES (
-    "STAGNET",
-    300,
-    "GB",
-    "https://pangea-group.net/pangea-5g-connectivity-enterprise-router/2",    
-    900.00,
-    0,
-    "Unavailable"
-);
-
