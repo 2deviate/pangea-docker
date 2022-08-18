@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS exchange_product_term (
 
 CREATE TABLE IF NOT EXISTS exchange_product (
     exchange_product_id INT AUTO_INCREMENT PRIMARY KEY,    
-    exchange_product_name VARCHAR(50) NOT NULL,
+    exchange_product_name VARCHAR(250) NOT NULL,
     exchange_product_limit INT NOT NULL,
     exchange_product_unit VARCHAR(2) NOT NULL,
     exchange_product_url VARCHAR(250) NOT NULL,    
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS exchange_product (
     exchange_product_status_fk VARCHAR(50) NOT NULL,    
     exchange_product_term_fk INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (exchange_product_status_fk) REFERENCES exchange_product_status(exchange_product_status_id)
+    FOREIGN KEY (exchange_product_status_fk) REFERENCES exchange_product_status(exchange_product_status_id),
     FOREIGN KEY (exchange_product_term_fk) REFERENCES exchange_product_term(exchange_product_term_id)
 );
 
