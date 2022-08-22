@@ -20,8 +20,8 @@ from .resources import (
     LocationAPI,
     DownloadAPI,
     UploadAPI,
-    RecommendationAPI,
-    AllocationAPI,
+    ProductAPI,
+    PricingAPI,
     ScriptEtlAPI,
     ScriptNotifyAPI
 )
@@ -105,19 +105,21 @@ api.add_resource(
     UploadAPI, "/v1.0/pangea/upload/file", methods=["POST"]
 )
 
-# Recommendation API - recommends a product based on usage
-# http://localhost/api/v1.0/pangea/recommendation/product/usage?limit=130
+# Product API - recommends product based on data usage
+# http://localhost/api/v1.0/pangea/product?limit=3.0
 api.add_resource(
-    RecommendationAPI, "/v1.0/pangea/recommendation/product/usage", methods=["GET"], endpoint="usage"    
+    ProductAPI, "/v1.0/pangea/product", methods=["GET"], endpoint="product"
 )
 
-# Resource API - resource allocations, de-allocations
-# http://localhost/api/v1.0/pangea/resource/db/query?sql='select count(*) from file_stage;'
-# http://localhost:5000/api/v1.0/pangea/resource/db/query?sql='select count(*) from file_stage;'
-api.add_resource(
-    AllocationAPI, "/v1.0/pangea/resource/db/query", methods=["GET"], endpoint="query"    
-)
+# Pricing API - product price matrix on data usage
+# http://localhost/api/v1.0/pangea/product/pricing?limit=3.0
+# http://localhost/api/v1.0/pangea/product/pricing/result/store/13?limit=3.0
+# http://localhost/api/v1.0/pangea/product/pricing/recommendations/file/upload/3
+api.add_resource(PricingAPI, "/v1.0/pangea/product/pricing", methods=["GET"], endpoint="pricing")
+api.add_resource(PricingAPI, "/v1.0/pangea/product/pricing/result/store/<store_id>", methods=["GET"], endpoint="store")
+api.add_resource(PricingAPI, "/v1.0/pangea/product/pricing/recommendations/file/upload/<file_upload_id>", methods=["GET"], endpoint="upload")
 
+# HOUSE KEEPING UTILITIES
 # Resource API - etl script invocations
 api.add_resource(
     ScriptEtlAPI, "/v1.0/pangea/resource/script/etl", methods=["GET"], endpoint="etl"

@@ -39,7 +39,7 @@ jobs:
       SMTP_PORT: 465
       EMAIL_FROM_ADDRESS: 'craig@2deviate.com'
       EMAIL_CC_ADDRESSES: 'admin@2deviate.com'
-      EMAIL_ATTACHMENT: 'stopsell.csv'
+      EMAIL_ATTACHMENT: 'PSTN Sales Planner.xlsx'
       EMAIL_SUBJECT: 'Pangea Exchange Stop Sell Information'
       PROXY_SERVER: 'server:8000'    
     steps:

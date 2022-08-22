@@ -8,7 +8,6 @@ Category: None
 # third-party imports
 import os
 import logging
-import pandas
 from flask import redirect, request
 from flask_restful import Resource, reqparse
 from flask import current_app, safe_join, send_from_directory
@@ -16,16 +15,28 @@ from flask import current_app, safe_join, send_from_directory
 # local imports
 from app import constants
 
+from .serializers import(
+    serialize_product,
+    serialize_pricing,
+    serialize_map_location,
+    serialize_fttp_exchange,
+    serialize_sam_exchange,
+    serialize_sam_exchange_location,
+    serialize_recommendation,
+    serialize_price_recommendations,
+)
+
 from .models import (    
     FttpExchange,
     Product,
+    Pricing,
     SamExchange,
     Location,
     FileResource,
-    FileStage,
-    Allocation,
+    FileStage,    
     ScriptExecute,
 )
+
 from app.api.schemas import (
     decommissions_exchange_schema,
     decommission_exchange_schema,
@@ -35,7 +46,13 @@ from app.api.schemas import (
     fttp_exchange_schema,
     locations_schema,
     product_schema,
+    pricing_schema,
+    prices_schema,
+    recommendation_schema,
+    recommendations_schema  
 )
+
+from app.redis import store
 from app.utils import response_json
 
 logger = logging.getLogger(__name__)
@@ -337,15 +354,15 @@ class UploadAPI(Resource):
             return response_json(True, results, constants.DATA_OPERATION_SUCCESSFUL)
 
 
-class RecommendationAPI(Resource):
+class ProductAPI(Resource):
     """
-    This API represents a recommendation API
+    This API represents a product API
     """
 
     def __init__(self):
         self.parser = reqparse.RequestParser()  # pylint: disable=invalid-name
         self.parser.add_argument("limit", type=str)
-        super(RecommendationAPI, self).__init__()
+        super(ProductAPI, self).__init__()
     
     def get(self):
         args = self.parser.parse_args()
@@ -365,30 +382,68 @@ class RecommendationAPI(Resource):
         pass
 
 
-class AllocationAPI(Resource):
+class PricingAPI(Resource):
     """
-    This API represents a resource allocation API
+    This API represents a pricing API
     """
 
     def __init__(self):
         self.parser = reqparse.RequestParser()  # pylint: disable=invalid-name
-        self.parser.add_argument("sql", type=str)
-        super(AllocationAPI, self).__init__()
-
-    def get(self):
+        self.parser.add_argument("limit", type=str)        
+        super(PricingAPI, self).__init__()
+    
+    def get(self, store_id=None, file_upload_id=None):
         args = self.parser.parse_args()
-        sql = args["sql"]
+        limit = args["limit"]        
 
-        if not (sql):
+        if not (limit or file_upload_id):
             return response_json(True, {}, constants.QUERY_MISSING_PARAMS)
 
-        results, _ = Allocation.execute_sql(sql)
+        results = []
+        if limit and not (store_id or file_upload_id):
+            results, _ = Pricing.find_by_limit(limit)
+            if results and len(results) == 1:
+                return pricing_schema.dump(serialize_pricing(results[0]))
+            elif results and len(results) > 1:
+                return prices_schema.dump(
+                    [serialize_pricing(result) for result in results]
+                )            
+            else:
+                return response_json(True, results, constants.NO_DATA_RESULTS_FOUND)
 
-        if results:
-            df = pandas.DataFrame(results)
-            return response_json(True, df.to_json(), constants.DATA_OPERATION_SUCCESSFUL)
+        if limit and store_id and not (file_upload_id):
+            results, _ = Pricing.find_by_limit(limit)            
+            _ = Pricing.set_by_limit(limit, store_id)
+            if results and len(results) == 1:
+                return pricing_schema.dump(serialize_pricing(results[0]))
+            elif results and len(results) > 1:
+                return prices_schema.dump(
+                    [serialize_pricing(result) for result in results]
+                )            
+            else:
+                return response_json(True, results, constants.NO_DATA_RESULTS_FOUND)
         
-        return response_json(True, results, constants.DATA_OPERATION_SUCCESSFUL)
+        if file_upload_id and not (limit or store_id):
+            results, _ = Pricing.get_recommendations(file_upload_id)
+            if results and len(results) == 1:
+                return recommendation_schema.dump(serialize_recommendation(results[0]))
+            elif results and len(results) > 1:
+                recommendations = []
+                for result in results:
+                    result_serialized = serialize_recommendation(result)
+                    result_serialized['product_pricing'] = []
+                    redis_cache_key = result_serialized.get("redis_cache_result_key", None)
+                    if redis_cache_key:
+                        prices = store.get(redis_cache_key)
+                        for price in prices[0]:
+                            price_serialized = serialize_pricing(price)
+                            result_serialized['product_pricing'].append(price_serialized)
+                    recommendations.append(result_serialized)
+                return recommendations_schema.dump(
+                    [serialize_price_recommendations(recommendation) for recommendation in recommendations]
+                )
+            else:
+                return response_json(True, results, constants.NO_DATA_RESULTS_FOUND)
 
     def post(self):
         pass
@@ -429,60 +484,4 @@ class ScriptNotifyAPI(Resource):
         return response_json(True, [], constants.DATA_OPERATION_SUCCESSFUL)
 
     def post(self):
-        pass    
-
-def serialize_product(product):
-    return {
-        "product_id": product[0],
-        "product_name": product[1],
-        "product_limit": product[2],
-        "product_unit": product[3],
-        "product_url": product[4],
-        "product_price": product[5],
-        "product_default": ord(product[6]),
-        "product_status": product[7],        
-    }
-
-
-def serialize_map_location(location):
-    return {
-        "address_components": location["address_components"],
-        "formatted_address": location["formatted_address"],
-        "geometry": location["geometry"],
-        "place_id": location["place_id"],
-        "types": location["types"],
-    }
-
-
-def serialize_fttp_exchange(exchange):
-    return {
-        "id": exchange[0],
-        "site_no": exchange[1],
-        "exchange_name": exchange[2],
-        "exchange_location": exchange[3],
-        "exchange_code": exchange[4],
-        "implementation_date": exchange[5],
-        "last_amended_date": str(exchange[6]),
-        "tranche": exchange[7],
-        "created_at": exchange[8],
-    }
-
-
-def serialize_sam_exchange(exchange):
-    return {
-        "exchange_name": exchange[0],
-        "exchange_code": exchange[1],
-        "exchange_county": exchange[2],
-        "exchange_region": exchange[3],
-    }
-
-
-def serialize_sam_exchange_location(exchange):
-    return {
-        "exchange_name": exchange["Exchange name"],
-        "exchange_code": exchange["Exchange code"],
-        "exchange_location": exchange["Location"],
-        "exchange_postcode": exchange["Postcode"],
-        "exchange_maps": exchange["Maps"],
-        "exchange_serves": exchange["Serves (approx)"],
-    }
+        pass

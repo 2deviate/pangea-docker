@@ -95,6 +95,7 @@ class Config(object):
             "exchange_product_unit": "Product Unit",
             "exchange_product_url": "Recommendation",    
             "exchange_product_price": "Price (GBP)",
+            "exchange_product_term": "Term",
             "created_at": "Created At"
     }
     

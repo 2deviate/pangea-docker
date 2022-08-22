@@ -1,330 +1,598 @@
 {
-  "openapi" : "3.0.0",
-  "servers" : [ {
-    "description" : "SwaggerHub API Auto Mocking",
-    "url" : "https://virtserver.swaggerhub.com/2DEVIATE-LTD/Pangea/1.0.0"
-  }, {
-    "description" : "Local Development Server",
-    "url" : "http://localhost:5000/api/v1.0/"
-  }, {
-    "description" : "Docker Container Server/",
-    "url" : "http://localhost:8000/api/v1.0/"
-  }, {
-    "description" : "Production Container Server",
-    "url" : "http://localhost/api/v1.0/"
-  } ],
-  "info" : {
-    "description" : "This is the Pangea exchange server API",
-    "version" : "1.0.0",
-    "title" : "Pangea Exchange API",
-    "termsOfService" : "http://pangea.io/terms/",
-    "contact" : {
-      "email" : "dev@pangea.io"
+  "openapi": "3.0.0",
+  "servers": [
+    {
+      "description": "SwaggerHub API Auto Mocking",
+      "url": "https://virtserver.swaggerhub.com/2DEVIATE-LTD/Pangea/1.0.0"
     },
-    "license" : {
-      "name" : "Apache 2.0",
-      "url" : "http://www.apache.org/licenses/LICENSE-2.0.html"
+    {
+      "description": "Local Development Server",
+      "url": "http://localhost:5000/api/v1.0/"
+    },
+    {
+      "description": "Docker Container Server/",
+      "url": "http://localhost:8000/api/v1.0/"
+    },
+    {
+      "description": "Production Container Server",
+      "url": "http://localhost/api/v1.0/"
+    }
+  ],
+  "info": {
+    "description": "This is the Pangea Sales Planner API",
+    "version": "1.0.0",
+    "title": "Pangea Sales Planner API",
+    "termsOfService": "http://pangea.io/terms/",
+    "contact": {
+      "email": "dev@pangea.io"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
-  "tags" : [ {
-    "name" : "Health",
-    "description" : "Server health check",
-    "externalDocs" : {
-      "description" : "Find out more",
-      "url" : "http://swagger.io"
+  "tags": [
+    {
+      "name": "Pangea Health API",
+      "description": "Server health check API"
+    },
+    {
+      "name": "Pangea Sam API",
+      "description": "SamKnows Exchange Info API",
+      "externalDocs": {
+        "description": "SamKnows Exchange",
+        "url": "https://availability.samknows.com/broadband/exchange_search"
+      }
+    },
+    {
+      "name": "Pangea Exchange API",
+      "description": "BT OpenReach Exchange Info API",
+      "externalDocs": {
+        "description": "BT OpenReach Exchange",
+        "url": "https://www.openreach.com/"
+      }
+    },
+    {
+      "name": "Pangea Exchange Decommission API",
+      "description": "Pangea Exchange Decommission API",
+      "externalDocs": {
+        "description": "Pangea",
+        "url": "https://pangea-group.net/pangea-cloudconnect"
+      }
+    },
+    {
+      "name": "Pangea Product API",
+      "description": "Pangea Product API",
+      "externalDocs": {
+        "description": "Pangea",
+        "url": "https://pangea-group.net/pangea-cloudconnect"
+      }
+    },
+    {
+      "name": "Pangea Pricing API",
+      "description": "Pangea Pricing API",
+      "externalDocs": {
+        "description": "Pangea",
+        "url": "https://pangea-group.net/pangea-cloudconnect"
+      }
     }
-  }, {
-    "name" : "Exchange",
-    "description" : "BT OpenReach Exchanges"
-  }, {
-    "name" : "Sam",
-    "description" : "SamKnows Exchange Info",
-    "externalDocs" : {
-      "description" : "SamKnows Exchange",
-      "url" : "http://swagger.io"
-    }
-  } ],
-  "paths" : {
-    "/pangea/health" : {
-      "get" : {
-        "tags" : [ "Health" ],
-        "summary" : "Check health status of server",
-        "description" : "Check the health of the service",
-        "operationId" : "getHealth",
-        "responses" : {
-          "200" : {
-            "description" : "Success"
+  ],
+  "paths": {
+    "/pangea/health": {
+      "get": {
+        "tags": [
+          "Pangea Health API"
+        ],
+        "summary": "Check health status of server",
+        "description": "Check the health of the service",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Success"
           }
         }
       }
     },
-    "/pangea/fttp/exchanges" : {
-      "get" : {
-        "tags" : [ "Exchange" ],
-        "summary" : "List all BT Openreach exchanges",
-        "description" : "List Openreach exchanges",
-        "operationId" : "getExchanges",
-        "responses" : {
-          "200" : {
-            "description" : "Success",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "allOf" : [ {
-                      "$ref" : "#/definitions/ExchangeModel"
-                    } ]
+    "/pangea/fttp/exchanges": {
+      "get": {
+        "tags": [
+          "Pangea Exchange API"
+        ],
+        "summary": "List all BT Openreach exchanges",
+        "description": "List Openreach exchanges",
+        "operationId": "getExchanges",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/ExchangeModel"
+                      }
+                    ]
                   }
                 }
               }
             }
           },
-          "405" : {
-            "description" : "Invalid input"
+          "405": {
+            "description": "Invalid input"
           }
         }
       }
     },
-    "/pangea/fttp/exchange/site/{site_no}" : {
-      "get" : {
-        "tags" : [ "Exchange" ],
-        "summary" : "Get exchange information by Site Id",
-        "description" : "Obtain information about a particular site, pass in site no.",
-        "operationId" : "getExchangeSite",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "site_no",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "minimum" : 1
+    "/pangea/fttp/exchange/site/{site_no}": {
+      "get": {
+        "tags": [
+          "Pangea Exchange API"
+        ],
+        "summary": "Get exchange information by Site Id",
+        "description": "Obtain information about a particular site, pass in site no.",
+        "operationId": "getExchangeSite",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "site_no",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Success",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/definitions/ExchangeModel"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ExchangeModel"
                 }
               }
             }
           },
-          "405" : {
-            "description" : "Invalid input"
+          "405": {
+            "description": "Invalid input"
           }
         }
       }
     },
-    "/pangea/fttp/exchange/name/{exchange_name}" : {
-      "get" : {
-        "tags" : [ "Exchange" ],
-        "summary" : "Get exchange information by name",
-        "description" : "Obtain information about a particular site, pass in site no.",
-        "operationId" : "getExchangeName",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "exchange_name",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
+    "/pangea/fttp/exchange/name/{exchange_name}": {
+      "get": {
+        "tags": [
+          "Pangea Exchange API"
+        ],
+        "summary": "Get exchange information by name",
+        "description": "Obtain information about a particular site, pass in site no.",
+        "operationId": "getExchangeName",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "exchange_name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Success",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/definitions/ExchangeModel"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ExchangeModel"
                 }
               }
             }
           },
-          "405" : {
-            "description" : "Invalid input"
+          "405": {
+            "description": "Invalid input"
           }
         }
       }
     },
-    "/pangea/fttp/exchange/code/{exchange_code}" : {
-      "get" : {
-        "tags" : [ "Exchange" ],
-        "summary" : "Get exchange information by exchange code",
-        "description" : "Obtain information about a particular site, pass in site no.",
-        "operationId" : "getExchangeCode",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "exchange_code",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
+    "/pangea/fttp/exchange/code/{exchange_code}": {
+      "get": {
+        "tags": [
+          "Pangea Exchange API"
+        ],
+        "summary": "Get exchange information by exchange code",
+        "description": "Obtain information about a particular site, pass in site no.",
+        "operationId": "getExchangeCode",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "exchange_code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Success",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/definitions/ExchangeModel"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ExchangeModel"
                 }
               }
             }
           },
-          "405" : {
-            "description" : "Invalid input"
+          "405": {
+            "description": "Invalid input"
           }
         }
       }
     },
-    "/pangea/fttp/exchange/location/{exchange_location}" : {
-      "get" : {
-        "tags" : [ "Exchange" ],
-        "summary" : "Get exchange information by exchange location",
-        "description" : "Obtain information about a particular site, pass in site no.",
-        "operationId" : "getExchangeLocation",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "exchange_location",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
+    "/pangea/fttp/exchange/location/{exchange_location}": {
+      "get": {
+        "tags": [
+          "Pangea Exchange API"
+        ],
+        "summary": "Get exchange information by exchange location",
+        "description": "Obtain information about a particular site, pass in site no.",
+        "operationId": "getExchangeLocation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "exchange_location",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Success",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/definitions/ExchangeModel"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/definitions/ExchangeModel"
                 }
               }
             }
           },
-          "405" : {
-            "description" : "Invalid input"
+          "405": {
+            "description": "Invalid input"
           }
         }
       }
     },
-    "/pangea/sam/exchange/info" : {
-      "get" : {
-        "tags" : [ "Sam" ],
-        "summary" : "SamKnows Exchange Info",
-        "description" : "",
-        "operationId" : "getExchangeInfo",
-        "parameters" : [ {
-          "in" : "query",
-          "name" : "query",
-          "schema" : {
-            "type" : "string"
+    "/pangea/sam/exchange/info": {
+      "get": {
+        "tags": [
+          "Pangea Sam API"
+        ],
+        "summary": "Pangea SamKnows Exchange Info",
+        "description": "",
+        "operationId": "getExchangeInfo",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exchange_code",
+            "schema": {
+              "type": "string"
+            }
           }
-        }, {
-          "in" : "query",
-          "name" : "exchange",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Success",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "allOf" : [ {
-                      "$ref" : "#/definitions/SamKnowsExchangeModel"
-                    } ]
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/SamKnowsExchangeModel"
+                      }
+                    ]
                   }
                 }
               }
             }
           },
-          "405" : {
-            "description" : "Invalid input"
+          "405": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/pangea/decommission/exchange/search": {
+      "get": {
+        "tags": [
+          "Pangea Exchange Decommission API"
+        ],
+        "summary": "Pangea SamKnows Exchange Info",
+        "description": "",
+        "operationId": "getExchangeInfo",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "exchange",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/ExchangesModel"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/pangea/product": {
+      "get": {
+        "tags": [
+          "Pangea Product API"
+        ],
+        "summary": "Pangea Product Info",
+        "description": "",
+        "operationId": "getProductInfo",
+        "parameters": [
+          {
+            "in": "data_usage",
+            "name": "data usage",
+            "schema": {
+              "type": "float"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/ProductModel"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/pangea/pricing": {
+      "get": {
+        "tags": [
+          "Pangea Pricing API"
+        ],
+        "summary": "Pangea Product Info",
+        "description": "",
+        "operationId": "getProductInfo",
+        "parameters": [
+          {
+            "in": "data_usage",
+            "name": "data usage",
+            "schema": {
+              "type": "float"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "#/definitions/PricesModel"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Invalid input"
           }
         }
       }
     }
   },
-  "definitions" : {
-    "ExchangesModel" : {
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/definitions/ExchangeModel"
+  "definitions": {
+    "PricesModel": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/PricingModel"
       }
     },
-    "ExchangeModel" : {
-      "type" : "object",
-      "properties" : {
-        "id" : {
-          "type" : "integer",
-          "example" : 1
+    "PricingModel": {
+      "type": "object",
+      "properties": {
+        "product_name": {
+          "type": "string",
+          "example": "4G Cat 4 PSTN Replacement Multi Net (O2 / VF / EE / 3) incl Static IP"
         },
-        "implementation_date" : {
-          "type" : "string",
-          "example" : "2020-12-01 00:00:00"
+        "product_limit": {
+          "type": "integer",
+          "example": 4
         },
-        "site_no" : {
-          "type" : "string",
-          "example" : "1"
+        "product_unit": {
+          "type": "string",
+          "example": "GB"
         },
-        "tranche" : {
-          "type" : "string",
-          "example" : "Trial notification"
+        "product_price": {
+          "type": "float",
+          "example": 28
         },
-        "last_amended_date" : {
-          "type" : "string",
-          "example" : "2019-12-01"
+        "product_category": {
+          "type": "string",
+          "example": "4G CAT 4"
         },
-        "exchange_name" : {
-          "type" : "string",
-          "example" : "Salisbury"
+        "product_class": {
+          "type": "string",
+          "example": "Multi Net"
         },
-        "created_at" : {
-          "type" : "string",
-          "example" : "2022-07-06T10:54:06"
-        },
-        "exchange_code" : {
-          "type" : "string",
-          "example" : "STSALIS"
-        },
-        "exchange_location" : {
-          "type" : "string",
-          "example" : "Salisbury"
+        "product_term": {
+          "type": "integer",
+          "example": "12"
         }
       }
     },
-    "SamKnowsModel" : {
-      "type" : "array",
-      "items" : {
-        "$ref" : "#/definitions/SamKnowsExchangeModel"
+    "ProductModel": {
+      "type": "object",
+      "properties": {
+        "product_id": {
+          "type": "integer",
+          "example": 1
+        },
+        "product_name": {
+          "type": "string",
+          "example": "4G Cat 4 PSTN Replacement Multi Net (O2 / VF / EE / 3) incl Static IP"
+        },
+        "product_limit": {
+          "type": "integer",
+          "example": 4
+        },
+        "product_unit": {
+          "type": "string",
+          "example": ""
+        },
+        "product_url": {
+          "type": "string",
+          "example": ""
+        },
+        "product_status": {
+          "type": "string",
+          "example": ""
+        },
+        "product_category": {
+          "type": "string",
+          "example": ""
+        },
+        "product_default": {
+          "type": "string",
+          "example": ""
+        }
       }
     },
-    "SamKnowsExchangeModel" : {
-      "type" : "object",
-      "properties" : {
-        "exchange_name" : {
-          "type" : "string",
-          "example" : "Londonderry Brookhall"
+    "ExchangesModel": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ExchangeModel"
+      }
+    },
+    "ExchangeModel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "example": 1
         },
-        "exchange_county" : {
-          "type" : "string",
-          "example" : "Derry City"
+        "implementation_date": {
+          "type": "string",
+          "example": "2020-12-01 00:00:00"
         },
-        "exchange_code" : {
-          "type" : "string",
-          "example" : "NIBRH"
+        "site_no": {
+          "type": "string",
+          "example": "1"
         },
-        "exchange_region" : {
-          "type" : "string",
-          "example" : "Northern Ireland"
+        "tranche": {
+          "type": "string",
+          "example": "Trial notification"
+        },
+        "last_amended_date": {
+          "type": "string",
+          "example": "2019-12-01"
+        },
+        "exchange_name": {
+          "type": "string",
+          "example": "Salisbury"
+        },
+        "created_at": {
+          "type": "string",
+          "example": "2022-07-06T10:54:06"
+        },
+        "exchange_code": {
+          "type": "string",
+          "example": "STSALIS"
+        },
+        "exchange_location": {
+          "type": "string",
+          "example": "Salisbury"
+        }
+      }
+    },
+    "SamKnowsModel": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/SamKnowsExchangeModel"
+      }
+    },
+    "SamKnowsExchangeModel": {
+      "type": "object",
+      "properties": {
+        "exchange_name": {
+          "type": "string",
+          "example": "Londonderry Brookhall"
+        },
+        "exchange_county": {
+          "type": "string",
+          "example": "Derry City"
+        },
+        "exchange_code": {
+          "type": "string",
+          "example": "NIBRH"
+        },
+        "exchange_region": {
+          "type": "string",
+          "example": "Northern Ireland"
         }
       }
     }

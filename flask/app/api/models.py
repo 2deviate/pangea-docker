@@ -153,11 +153,41 @@ class Product(object):
 
     @cached
     @staticmethod    
-    def find_by_limit(limit):        
-        proc = const.SP_EXCHANGE_PRODUCT_FIND_BY_LIMIT
-        args = limit, const.PRODUCT_STATUS_AVAILABLE        
-        results = db.execute(proc, *args)                
-        return results
+    def find_by_limit(limit):
+        return  db.execute(const.SP_GET_EXCHANGE_PRODUCT_BY_LIMIT, limit)        
+
+
+class Pricing(object):
+    """
+    This class represents an Pricing object
+    """
+
+    def __init__(self, **kwargs):
+        self.limit = kwargs.get("limit", None)
+        self.exchange_query_id = kwargs.get("exchange_query_id", None)
+
+    def __repr__(self):
+        return "<limit: {}>".format(self.data_usage)
+
+    @cached
+    @staticmethod
+    def find_by_limit(limit):
+        return db.execute(const.SP_GET_EXCHANGE_PRODUCT_PRICING_BY_LIMIT, limit)
+
+    @staticmethod
+    def set_by_limit(limit, store_id):
+        result_key = cache_key("Pricing.find_by_limit", limit)   # TODO: derive instead of magic string
+        if store_id:            
+            return db.execute(const.SP_SET_EXCHANGE_PRODUCT_PRICING_BY_LIMIT, store_id, result_key)
+
+    @staticmethod
+    def get_recommendations(file_upload_id):
+        return db.execute(const.SP_GET_EXCHANGE_QUERY_RESULTS, file_upload_id)
+        
+    @staticmethod
+    def get_recommendation(exchange_query_id):
+        pass
+
 
 
 class Location(object):
@@ -225,7 +255,8 @@ class FileStage(object):
                 self.site_postcode = self.args[1] if self.args[1] else None
                 self.exchange_code = self.args[2] if self.args[2] else None
                 self.avg_data_usage = self.args[3] if self.args[3] else None                                
-                self.file_stage_fk = self.args[4] if self.args[4] else None
+                self.file_upload_fk = self.args[4] if self.args[4] else None
+                self.exchange_query_status_fk = self.args[5] if self.args[5] else None
                 # implemented place holder fields
             except Exception as err:
                 logger.error(f"Row init exception,", err)
@@ -242,12 +273,13 @@ class FileStage(object):
                 except ValueError as err:
                     logger.warning(f"Unable to parse avg_data_usage as int, {self.args=}", err)                    
                     pass            
-            file_stage_fk = self.file_stage_fk            
-            return (cli, site_postcode, None, exchange_code, None, avg_data_usage, None, file_stage_fk, None)
+            file_upload_fk = self.file_upload_fk
+            exchange_query_status_fk = self.exchange_query_status_fk
+            return (cli, site_postcode, None, exchange_code, None, avg_data_usage, None, file_upload_fk, exchange_query_status_fk)
 
     @staticmethod
     def find_by_status(status):        
-        return db.execute(const.SP_GET_FILE_STAGE_BY_STATUS, status)                
+        return db.execute(const.SP_GET_FILE_UPLOAD_BY_STATUS, status)                
 
     @staticmethod
     def insert(email, filename):
@@ -256,22 +288,22 @@ class FileStage(object):
         if email and FileStage.validate_email(email) and os.path.exists(filename):            
             file_path = os.path.dirname(filename)
             file_name = os.path.basename(filename)
-            file_stage_status = const.FILE_STATUS_NEW
+            file_upload_status = const.FILE_STATUS_NEW
             file_size, modified_date = FileStage.get_resource_attributes(filename)            
             file_modified_date = datetime.datetime.fromtimestamp(modified_date)
             
             # insert file stage record            
-            proc = const.SP_INSERT_FILE_STAGE
-            args = (email, file_name, file_path, file_size, file_modified_date, file_stage_status, None)
+            proc = const.SP_INSERT_FILE_UPLOAD
+            args = (email, file_name, file_path, file_size, file_modified_date, file_upload_status, None)
             logger.info(f"Insert call, {proc=}, {args=}")
             _, params = db.execute(proc, *args)
-            # unpack params for file_stage_id
-            *_, file_stage_id = params
+            # unpack params for file_upload_id
+            *_, file_upload_id = params
             
             # insert bulk query record from csv
-            if file_stage_id:
+            if file_upload_id:
                 try:
-                    proc = const.SP_INSERT_FILE_QUERY
+                    proc = const.SP_INSERT_EXCHANGE_QUERY
                     logger.info(f"Open file, {filename=}")
                     with open(filename) as f:
                         csv_reader = csv.reader(f, delimiter=",")
@@ -282,7 +314,7 @@ class FileStage(object):
                                 continue
                             if line:
                                 logger.info(f"Inserting Row, {line=}")
-                                row_obj = FileStage.Row(*line, file_stage_id)
+                                row_obj = FileStage.Row(*line, file_upload_id, const.EXCHANGE_QUERY_STATUS_WAIT)
                                 
                                 args = row_obj.values()
                                 
@@ -291,8 +323,8 @@ class FileStage(object):
 
                 except Exception as err:
                     logger.error(f"Unable to import file into db {filename=}", err)
-                    proc = const.SP_UPDATE_FILE_STAGE_STATUS
-                    args = file_stage_id, const.FILE_STATUS_EXCEPTION
+                    proc = const.SP_UPDATE_FILE_UPLOAD_STATUS
+                    args = file_upload_id, const.FILE_STATUS_EXCEPTION
                     logger.info(f"Updating status, {proc=}, {args=}")
                     db.execute(proc, *args)
                     raise
@@ -302,8 +334,8 @@ class FileStage(object):
                         os.remove(filename)
                     except Exception as err:
                         logger.error(f"Unable to delete temp file {filename=}", err)
-                        proc = const.SP_UPDATE_FILE_STAGE_STATUS
-                        args = file_stage_id, const.FILE_STATUS_EXCEPTION
+                        proc = const.SP_UPDATE_FILE_UPLOAD_STATUS
+                        args = file_upload_id, const.FILE_STATUS_EXCEPTION
                         logger.info(f"Updating status, {proc=}, {args=}")
                         db.execute(proc, *args)
                         raise
@@ -323,22 +355,6 @@ class FileStage(object):
         except Exception as ex:
             logger.error(f"Invalid email, {email=}", ex)
             raise
-
-
-class Allocation(object):
-    """
-    This class represents an simple resource allocation
-    """
-
-    def __init__(self, **kwargs):
-        self.sql = kwargs.get("sql", None)
-
-    def __repr__(self):
-        return "<sql: {}>".format(self.sql)
-
-    @staticmethod
-    def execute_sql(sql):
-        return db.execute(const.SP_EXECUTE_SQL, sql)   
 
 
 class ScriptExecute(object):

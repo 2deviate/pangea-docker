@@ -21,39 +21,57 @@ FILE_UPLOAD_SUCCESSFUL = "File Upload Successful"
 FILE_UPLOAD_UNSUCCESSFUL = "File Upload Successful"
 
 # ------------ Database Constants -----------------
-FILE_STATUS_NEW = "New"
-FILE_STATUS_UPLOAD = "Upload"
-FILE_STATUS_PROCESS = "Process"
-FILE_STATUS_NOTIFY = "Notify"
-FILE_STATUS_SENT = "Sent"
-FILE_STATUS_COMPLETE = "Complete"
-FILE_STATUS_EXCEPTION = "Exception"
+FILE_STATUS_NEW = 1                     # New
+FILE_STATUS_UPLOAD = 2                  # Upload
+FILE_STATUS_PROCESS = 3                 # Process
+FILE_STATUS_NOTIFY = 4                  # Notify
+FILE_STATUS_SENT = 5                    # Sent
+FILE_STATUS_COMPLETE = 6                # Complete
+FILE_STATUS_EXCEPTION = 7               # Exception
 
-PRODUCT_STATUS_AVAILABLE = "Available"
-PRODUCT_STATUS_UNAVAILABLE = "Unavailable"
+EXCHANGE_QUERY_STATUS_WAIT = 1          # Wait
+EXCHANGE_QUERY_STATUS_BUSY = 2          # Busy
+EXCHANGE_QUERY_STATUS_DONE = 3          # Done
+EXCHANGE_QUERY_STATUS_EXCEPTION = 4     # Exception
+
+PRODUCT_STATUS_AVAILABLE = 1            # Available
+PRODUCT_STATUS_UNAVAILABLE = 2          # Unavailable
 
 # ------------ Stored Procedures -------------------
 
+SP_INSERT_FILE_UPLOAD = "sp_insert_file_upload"
+SP_UPDATE_FILE_UPLOAD_STATUS = "sp_update_file_upload_status"
+SP_GET_FILE_UPLOAD_BY_STATUS = "sp_get_file_upload_by_status"
+
+SP_INSERT_EXCHANGE_QUERY = "sp_insert_exchange_query"
+SP_UPDATE_EXCHANGE_QUERY = "sp_update_exchange_query"
+SP_UPDATE_EXCHANGE_QUERY_STATUS = "sp_update_exchange_query_status"
+SP_GET_EXCHANGE_QUERY_BY_FILE_UPLOAD_ID = "sp_get_exchange_query_by_file_upload_id"
+
 SP_GET_EXCHANGE_PRODUCT_DEFAULT_ID = "sp_get_exchange_product_default_id"
-SP_UPDATE_FILE_STAGE_STATUS = "sp_update_file_stage_status"
-SP_UPDATE_FILE_QUERY = "sp_update_file_query"
-SP_GET_FILE_QUERY_BY_FILE_STAGE_ID = "sp_get_file_query_by_file_stage_id"
+
 SP_INSERT_EXCHANGE_DECOM = "sp_insert_exchange_decom"
-SP_GET_EXCHANGE_DECOM_COUNT = "sp_get_exchange_decom_count"
 SP_TRUNCATE_EXCHANGE_DECOM = "sp_truncate_exchange_decom"
+SP_GET_EXCHANGE_DECOM_COUNT = "sp_get_exchange_decom_count"
+
 SP_GET_EXCHANGE_DECOM_BY_EXCHANGE_ID = "sp_get_exchange_decom_by_exchange_id"
-SP_GET_FILE_STAGE_BY_STATUS = "sp_get_file_stage_by_status"
-SP_GET_EXCHANGE_DECOM_BY_LIMIT = "sp_get_exchange_decom_by_limit"
+
 SP_GET_EXCHANGE_DECOM_BY_SITE = "sp_get_exchange_decom_by_site"
+SP_GET_EXCHANGE_DECOM_BY_LIMIT = "sp_get_exchange_decom_by_limit"
 SP_GET_EXCHANGE_DECOM_BY_EXCHANGE_NAME = "sp_get_exchange_decom_by_exchange_name"
 SP_GET_EXCHANGE_DECOM_BY_EXCHANGE_CODE = "sp_get_exchange_decom_by_exchange_code"
 SP_GET_EXCHANGE_DECOM_BY_EXCHANGE_LOCATION = "sp_get_exchange_decom_by_exchange_location"
-SP_EXCHANGE_PRODUCT_FIND_BY_LIMIT = "sp_exchange_product_find_by_limit"
-SP_INSERT_FILE_STAGE = "sp_insert_file_stage"
-SP_INSERT_FILE_QUERY = "sp_insert_file_query"
+
+SP_GET_EXCHANGE_PRODUCT_BY_LIMIT = "sp_get_exchange_product_by_limit"
+SP_GET_EXCHANGE_PRODUCT_PRICING_BY_LIMIT = "sp_get_exchange_product_pricing_by_limit"
+SP_SET_EXCHANGE_PRODUCT_PRICING_BY_LIMIT = "sp_set_exchange_product_pricing_by_limit"
 
 SP_GET_UPLOADED_FILES = "sp_get_uploaded_files"
-SP_GET_RECOMMENDATIONS = "sp_get_recommendations"
+
+SP_GET_EXCHANGE_QUERY_RESULTS = "sp_get_exchange_query_results"
+
+# SP_GET_EXCHANGE_PRODUCT_RECOMMENDATIONS = "sp_get_exchange_product_recommendation"
+# SP_GET_EXCHANGE_PRODUCT_RECOMMENDATIONS = "sp_get_exchange_product_recommendations"
 
 SP_EXECUTE_SQL = "sp_execute_sql"
 

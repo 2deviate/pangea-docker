@@ -64,16 +64,39 @@ class ProductSchema(Schema):
     product_unit = fields.String()
     product_url = fields.String()
     product_status = fields.String()
-    product_price = fields.Float()
+    product_category = fields.String()
     product_default = fields.Integer()
-
 
 product_schema = ProductSchema()
 products_schema = ProductSchema(many=True)
 
-class AllocationSchema(Schema):
-    results = fields.String()
 
-allocation_schema = AllocationSchema()
-allocations_schema = AllocationSchema(many=True)
+class PricingSchema(Schema):
+    product_name = fields.String()
+    product_limit = fields.Float()
+    product_unit = fields.String()
+    product_price = fields.Float()
+    product_category = fields.String()
+    product_class = fields.String()
+    product_term = fields.Integer()
+
+pricing_schema = PricingSchema()
+prices_schema = PricingSchema(many=True)
+
+class RecommendationSchema(Schema):
+    file_upload_id = fields.Integer()
+    exchange_query_status_id = fields.Integer()
+    file_email_address = fields.String()
+    exchange_query_id = fields.Integer()
+    cli = fields.String()
+    site_postcode = fields.String()
+    exchange_name = fields.String()
+    exchange_code = fields.String()
+    avg_data_usage = fields.Float()
+    stop_sell_date = fields.String()
+    redis_cache_result_key = fields.String()
+    product_pricing = fields.List(fields.Nested(PricingSchema))
+
+recommendation_schema = RecommendationSchema()
+recommendations_schema = RecommendationSchema(many=True)
 

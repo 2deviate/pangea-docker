@@ -10,6 +10,7 @@ import re
 import logging
 import os
 import json
+import shutil
 import pandas
 import urllib3
 import time
@@ -28,6 +29,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email_validator import validate_email, EmailNotValidError
+from openpyxl import Workbook, load_workbook
 
 logger = logging.getLogger(__name__)
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -79,40 +81,53 @@ def get_data(method, url=None, headers=None, body=None, **attrs):
 
 
 def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
-
+    "Sends mail with excel attachment"
+    
     logger.info(f"sending mail, {from_addr=}, {to_addrs=}, {cc_addrs=}, {bcc_addrs=}")
-
-    text_template = email_template_text if email_template_text else ""
-    html_template = email_template_html if email_template_html else df.columns()
-
-    text_subject = text_template.strip()
-    html_columns = html_template.split(',')
-    html_body = df.to_html(columns=html_columns, index=False)
-
-    text_part = MIMEText(text_subject, "plain")
-    html_part = MIMEText(html_body, "html")
-
+    
+    text_subject = email_template_text.strip() if email_template_text else None        
+    text_part = MIMEText(text_subject, "plain")    
+    
     msg_alternative = MIMEMultipart("alternative")
-    msg_alternative.attach(text_part)
-    msg_alternative.attach(html_part)
+    msg_alternative.attach(text_part)    
 
     msg_mixed = MIMEMultipart("mixed")
     msg_mixed.attach(msg_alternative)
 
     if not df.empty:
-        with tempfile.NamedTemporaryFile(suffix=".csv") as tmp:            
-            logger.info(f"created tmp file {tmp.name=}")
-            df.to_csv(tmp, columns=html_columns, index=False)
-            fp = open(tmp.name, "rb")
-            attachment = MIMEApplication(fp.read(), _subtype="csv")
-            fp.close()
-            attachment.add_header("Content-Disposition", "attachment", filename=email_attachment)    
-            msg_mixed.attach(attachment)
-
+        tmpdir = tempfile.mkdtemp()
+        tmpfil = os.path.join(tmpdir,"template.xlsx")
+        logger.info(f"created tmp file {tmpfil=}")
+        template = os.path.join(dir_path, f"app/data/downloads/template.xlsx")        
+        try:
+            shutil.copyfile(template, tmpfil)
+        except IOError as err:
+            logger.error(f"Unable to copy tmp file {tmpfil=}", err)
+            raise    
+        # write excel sheet in template book
+        writer = pandas.ExcelWriter(tmpfil, engine="openpyxl", mode='a')
+        writer.book = load_workbook(tmpfil)
+        df.to_excel(writer, sheet_name='Sales Planner', index=True, merge_cells=True)                
+        writer.save()
+        # open binary attachment
+        fp = open(tmpfil, "rb")
+        attachment = MIMEApplication(fp.read(), _subtype="xls")
+        fp.close()
+        # clean up
+        if os.path.exists(tmpfil):
+            try:
+                os.remove(tmpfil)  # remove tmp file
+                shutil.rmtree(tmpdir)  # remove tmp folder
+            except OSError as err:
+                logger.error(f"Unable to remove file {tmpfil=} or directory {tmpdir=}", err)
+        # attach header
+        attachment.add_header("Content-Disposition", "attachment", filename=email_attachment)    
+        msg_mixed.attach(attachment)
+    # setup mail address's
     to_addrs = [addrs for addrs in set(to_addrs) if validate_addrs(addrs) is not None]
     cc_addrs = [addrs for addrs in set(cc_addrs) if validate_addrs(addrs) is not None]
     bcc_addrs = [addrs for addrs in set(bcc_addrs) if validate_addrs(addrs) is not None]
-    
+    # setup mime message
     msg_mixed["From"] = from_addr
     msg_mixed["To"] = ",".join(to_addrs)
     msg_mixed["Cc"] = ",".join(cc_addrs)
@@ -157,8 +172,7 @@ def execute_query(query):
         raise
 
 
-def set_status(*args):
-    proc = const.SP_UPDATE_FILE_STAGE_STATUS
+def set_status(proc, *args):    
     try:
         db.execute(proc, *args)
         logger.info(f"executed {proc=}, args {args=}")
@@ -169,9 +183,11 @@ def set_status(*args):
 
 def parse_data(data_obj):
     try:
-        data = json.loads(data_obj)
-        data = data.get("response", data)
+        data = json.loads(data_obj)        
+        if data and isinstance(data, list):
+            return dict({"results": data})
         if data and isinstance(data, dict):
+            data = data.get("response", data)
             return data
         return None
     except Exception as err:
@@ -189,7 +205,7 @@ async def request_data(url, **kwargs):
 
 async def process_query(query, dry_run):
     schema = [
-        'file_query_id',
+        'exchange_query_id',
         'cli',
         'site_postcode',
         'exchange_name',
@@ -197,28 +213,26 @@ async def process_query(query, dry_run):
         'exchange_postcode',
         'avg_data_usage',
         'implementation_date',
-        'file_stage_fk',
-        'exchange_product_fk'        
+        'file_upload_fk',
+        'exchange_query_status_fk'
     ]
     query = { k:query[i] for i, k in enumerate(schema) }
 
+    exchange_query_id = query['exchange_query_id']
     cli = query['cli']
     site_postcode = query['site_postcode']
-    exchange_code = query['exchange_code']
     avg_data_usage = query['avg_data_usage']
-    file_stage_fk = query['file_stage_fk']
+    exchange_code = query['exchange_code']    
     
     if not dry_run:
-        args = (file_stage_fk, const.FILE_STATUS_PROCESS)
-        set_status(*args)
-
-    url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/recommendation/product/usage?limit={avg_data_usage}"
-    #data = await request_data(url, **query)
+        args = (exchange_query_id, const.EXCHANGE_QUERY_STATUS_BUSY)
+        set_status(const.SP_UPDATE_EXCHANGE_QUERY_STATUS, *args)
+    # http://localhost/api/v1.0/pangea/product/pricing/result/13?limit=3.0
+    url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/product/pricing/result/store/{exchange_query_id}?limit={avg_data_usage}"
     t1 = request_data(url, **query)
     
     criterion = cli if cli else site_postcode if site_postcode else exchange_code
     url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/sam/exchange/info?query={criterion}"
-    #data = await request_data(url, **data)
     t2 = request_data(url, **query)
 
     # prop and await results
@@ -226,7 +240,7 @@ async def process_query(query, dry_run):
     
     # combine dicts using reduce on merge lambda
     data = reduce(lambda x, y: x | y, results, {})
-                
+
     exchange_code = data['exchange_code']
     if exchange_code:
         url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/decommission/exchange/search?query={exchange_code}"
@@ -247,49 +261,58 @@ async def process_query(query, dry_run):
             logger.error(f"Unable to parse, {implementation_date=}", err)            
             pass
     
-    data = { k:v for k,v in data.items() if v is not None}
+    data = {k:v for k,v in data.items() if v is not None}
 
     args = (
-        data.get('file_query_id'),
+        data.get('exchange_query_id'),
         data.get('cli', const.NOT_PROVIDED),
         data.get('site_postcode', const.NOT_PROVIDED),
         data.get('exchange_name', const.NO_DATA_RESULTS_FOUND),
         data.get('exchange_code', const.NO_DATA_RESULTS_FOUND),
         data.get('exchange_postcode', const.NO_DATA_RESULTS_FOUND),
         data.get('avg_data_usage'),
-        data.get('stop_sell_date', const.NO_STOP_SELL_INFORMATION),
-        data.get('product_id')
+        data.get('stop_sell_date', const.NO_STOP_SELL_INFORMATION),        
+        data.get('file_upload_fk'),
+        const.EXCHANGE_QUERY_STATUS_DONE
     )
-    proc = const.SP_UPDATE_FILE_QUERY
+    
+    proc = const.SP_UPDATE_EXCHANGE_QUERY
 
     try:
         affected, _ = db.execute(proc, *args)
-        logger.info(f"Executed {proc=}, {args=}, {affected=}")
+        logger.info(f"Executed {proc=}, {args=}, {affected=}")        
     except Exception as err:
         logger.error(f"Error updating, {proc=}, {args=}", err)
+        if not dry_run:            
+            args = (exchange_query_id, const.EXCHANGE_QUERY_STATUS_EXCEPTION)
+            set_status(const.SP_UPDATE_EXCHANGE_QUERY_STATUS, *args)
         raise
 
 
 async def process_upload(upload, dry_run):
-    file_stage_id, *_ = upload
+    file_upload_id, *_ = upload
 
     if not dry_run:
-        args = (file_stage_id, const.FILE_STATUS_UPLOAD)
-        set_status(*args)
+        args = (file_upload_id, const.FILE_STATUS_UPLOAD)
+        set_status(const.SP_UPDATE_FILE_UPLOAD_STATUS, *args)
 
-    proc = const.SP_GET_FILE_QUERY_BY_FILE_STAGE_ID
+    proc = const.SP_GET_EXCHANGE_QUERY_BY_FILE_UPLOAD_ID
     if not dry_run:
         try:
-            queries, _ = db.execute(proc, file_stage_id)
+            queries, _ = db.execute(proc, file_upload_id)
             logger.info(
-                f"fetched builk queries, {proc=}, {file_stage_id=}, {dry_run=}"
+                f"fetched builk queries, {proc=}, {file_upload_id=}, {dry_run=}"
             )
         except Exception as err:
             logger.error(f"Error uploading, {proc=}, raising err", err)
             if not queries and not dry_run:
-                args = (file_stage_id, const.FILE_STATUS_EXCEPTION)
-                set_status(*args)
+                args = (file_upload_id, const.FILE_STATUS_EXCEPTION)
+                set_status(const.SP_UPDATE_FILE_UPLOAD_STATUS, *args)
             raise
+
+    if not dry_run:
+        args = (file_upload_id, const.FILE_STATUS_PROCESS)
+        set_status(const.SP_UPDATE_FILE_UPLOAD_STATUS, *args)
 
     for query in queries:
         logger.info(f"processing {query=}")
@@ -299,9 +322,8 @@ async def process_upload(upload, dry_run):
             logger.error(f"Error processing upload query, {query=}", err)
 
     if not dry_run:
-        args = (file_stage_id, const.FILE_STATUS_NOTIFY)
-        set_status(*args)
-        return True
+        args = (file_upload_id, const.FILE_STATUS_NOTIFY)
+        set_status(const.SP_UPDATE_FILE_UPLOAD_STATUS, *args)
 
 
 async def process_uploads(dry_run):
@@ -317,53 +339,74 @@ async def process_uploads(dry_run):
         raise
 
 
-def process_notification(notification, dry_run):
-    file_stage_id, email_to_address, *_ = notification
-    try:
-        proc, args = const.SP_GET_RECOMMENDATIONS, file_stage_id
-        recommedations, _ = db.execute(proc, args)
-        logger.info(f"executed {proc=}, {args=}, {recommedations=}, {dry_run=}")
+async def process_notification(notification, dry_run):
+    file_upload_id, email_to_address, *_ = notification
+    try:        
+        # http://localhost/api/v1.0/pangea/product/pricing/recommendations/file/upload/3
+        url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/product/pricing/recommendations/file/upload/{file_upload_id}"
+        data = await request_data(url)                    
     except Exception as err:
-        logger.info(f"Error executing  {proc=}, {args=}, {dry_run=}")
+        logger.error(f"Error executing  {url=}, {data=}, {dry_run=}", err)
         raise
-    try:
-        df = pandas.DataFrame()        
+    try:        
+        matrix = []
+        multi_level_index = ['Class', 'Category', 'Term']
+        single_level_index = ['Site Post Code', 'Exchange Name', 'Exchange Code', 'Average Data Usage (GB)', 'Exchange Stop Sell Date', 'Inclusive Data (GB)']
+        drop_columns = ['cli', 'exchange_query_status_id', 'exchange_query_id', 'redis_cache_result_key', 'file_email_address', 'file_upload_id']
+        for record in data['results']:
+            product_df = pandas.DataFrame.from_dict(record['product_pricing'])
+            product_df = product_df.drop(['product_name', 'product_unit'], axis=1)
+            product_df.rename(columns={
+                "product_term":"Term", 
+                "product_class": "Class", 
+                "product_limit": "Inclusive Data (GB)", 
+                "product_price": "Price", 
+                "product_category": "Category"}, inplace=True)            
+            prices_df = pandas.DataFrame.from_dict(record)            
+            prices_df = prices_df.drop(drop_columns+['product_pricing'], axis=1)
+            prices_df.rename(columns={
+                "avg_data_usage": "Average Data Usage (GB)", 
+                "exchange_code": "Exchange Code",
+                "stop_sell_date": "Exchange Stop Sell Date", 
+                "site_postcode": "Site Post Code", 
+                "exchange_name": "Exchange Name"}, inplace=True)            
+            combined_df = pandas.concat([product_df, prices_df], axis=1)
+            matrix.append(combined_df)
+        # concat dataframes
+        df = pandas.concat(matrix)
+        df = pandas.pivot_table(df, index=single_level_index, columns=multi_level_index, values='Price')        
+        # setup mail
         from_addr = email_from_address
         to_addrs = email_to_address.split(',')
         cc = email_cc_address.split(',')
         bcc = email_bcc_address.split(',')
-        try:
-            df_cols = email_template_schema.values()
-            df = pandas.DataFrame(recommedations, columns=df_cols)
-        except Exception as err2:
-            logger.error(f"Cannot form attachment, ignoring, {args=}", err2)
-            pass            
+        # send mail with attachments
         logger.info(f"sending mail {from_addr=}, {to_addrs=}, {cc=}, {bcc=}")
-        args = (file_stage_id, const.FILE_STATUS_COMPLETE)
+        args = (file_upload_id, const.FILE_STATUS_COMPLETE)
         if not dry_run:
             send_mail(from_addr, to_addrs, cc, bcc, df=df)
-            set_status(*args)
+            set_status(const.SP_UPDATE_FILE_UPLOAD_STATUS, *args)
         logger.info(f"sent mail {args=}, {df=}")
         if not dry_run:
-            args = (file_stage_id, const.FILE_STATUS_SENT)
-            set_status(*args)
+            args = (file_upload_id, const.FILE_STATUS_SENT)
+            set_status(const.SP_UPDATE_FILE_UPLOAD_STATUS, *args)
         logger.info(f"updated status, {args=}")
         return True
     except Exception as err1:
         if not dry_run:
-            args = (file_stage_id, const.FILE_STATUS_EXCEPTION)
-            set_status(*args)
+            args = (file_upload_id, const.FILE_STATUS_EXCEPTION)
+            set_status(const.SP_UPDATE_FILE_UPLOAD_STATUS, *args)
         logger.error(f"Error sending mail, {notification=}, {email_to_address=}", err1)
         raise
 
 
-def process_notifications(dry_run):
+async def process_notifications(dry_run):
     try:
         if not dry_run:
             proc, args = const.SP_GET_UPLOADED_FILES, const.FILE_STATUS_NOTIFY
             notifications, _ = db.execute(proc, args)
             for notification in notifications:
-                process_notification(notification, dry_run)
+                await process_notification(notification, dry_run)
         logger.info(f"fetched notifications, {dry_run=}")
     except Exception as err:
         logger.error(f"Error processing notification, raising err", err)
@@ -374,7 +417,7 @@ async def _main(**kwargs):
     dry_run = kwargs.get("dry_run", None)
     try:
         await process_uploads(dry_run)
-        process_notifications(dry_run)
+        await process_notifications(dry_run)
     except Exception as ex:
         logger.error(f"Error processing uploads and notifications, {kwargs=}", ex)
         return 1
