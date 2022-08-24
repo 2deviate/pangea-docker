@@ -14,7 +14,7 @@ QUERY_MISSING_PARAMS = "Params Missing"
 INVALID_DATA = "Invalid Data"
 NO_DATA_RESULTS_FOUND = "No Data"
 NOT_PROVIDED = "Not Provided"
-NO_STOP_SELL_INFORMATION = "No Stop Sell Information"
+NO_STOP_SELL_INFORMATION = "2023-09-01"
 FILE_IO_ERROR = "File IO Error"
 FILE_SAVE_SUCCESSFUL = "File Save Successful"
 FILE_UPLOAD_SUCCESSFUL = "File Upload Successful"
@@ -70,32 +70,31 @@ SP_GET_UPLOADED_FILES = "sp_get_uploaded_files"
 
 SP_GET_EXCHANGE_QUERY_RESULTS = "sp_get_exchange_query_results"
 
-# SP_GET_EXCHANGE_PRODUCT_RECOMMENDATIONS = "sp_get_exchange_product_recommendation"
-# SP_GET_EXCHANGE_PRODUCT_RECOMMENDATIONS = "sp_get_exchange_product_recommendations"
-
 SP_EXECUTE_SQL = "sp_execute_sql"
 
 # ------------ Email Templates -------------------
 
-EMAIL_ATTACHMENT = "StopSellInfo.csv"
+EMAIL_ATTACHMENT = "Pangea Sales Planner.xlsx"
 EMAIL_SUBJECT = "Pangea Exchange Stop Sell Information"
+
 EMAIL_TEMPLATE_SCHEMA = {
     "cli": "CLI",
-    "site_postcode": "Site Post Code",
     "exchange_name": "Exchange Name",
-    "exchange_code": "Exchange Code",
-    "exchange_postcode": "Exchange Post Code",
     "avg_data_usage": "Average Data Usage (MB)",
-    "stop_sell_date": "Stop Sell Date",    
-    "exchange_product_name": "Product Name",
-    "exchange_product_limit": "Product Limit" ,
-    "exchange_product_unit": "Product Unit",
-    "exchange_product_url": "Recommendation",    
-    "exchange_product_price": "Price (GBP)",
-    "created_at": "Created At"
+    "file_email_address": "Email Address",
+    "exchange_code": "Exchange Code",
+    'redis_cache_result_key': "Cached Key",
+    "stop_sell_date": "Exchange Stop Sell Date",    
+    "exchange_query_status_id": "Exchange Query Status Id",
+    "site_postcode": "Site Post Code",
+    "file_upload_id": "File Upload Id",
+    "exchange_query_id": "Exchange Query Id",
+    "exchange_postcode": "Exchange Post Code",    
+    "product_category": "Category",
+    "product_limit": "Inclusive Data (GB)",
+    "product_price": "Price (GBP)",
+    "product_class": "Class",
+    "product_name": "Product Name",
+    "product_unit": "Product Unit",    
+    "product_term": "Term",
 }
-
-
-
-
-

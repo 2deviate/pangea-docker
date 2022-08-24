@@ -183,11 +183,6 @@ class Pricing(object):
     @staticmethod
     def get_recommendations(file_upload_id):
         return db.execute(const.SP_GET_EXCHANGE_QUERY_RESULTS, file_upload_id)
-        
-    @staticmethod
-    def get_recommendation(exchange_query_id):
-        pass
-
 
 
 class Location(object):
@@ -266,15 +261,18 @@ class FileStage(object):
             cli = str(self.cli) if self.cli else None                        
             site_postcode = str(self.site_postcode) if self.site_postcode else None
             exchange_code = str(self.exchange_code) if self.exchange_code else None            
-            avg_data_usage = 0
+            
+            avg_data_usage = 0.0
             if self.avg_data_usage:
                 try:
-                    avg_data_usage = int(self.avg_data_usage)
+                    avg_data_usage = float(self.avg_data_usage)
                 except ValueError as err:
-                    logger.warning(f"Unable to parse avg_data_usage as int, {self.args=}", err)                    
+                    logger.warning(f"Unable to parse avg_data_usage as float, {self.args=}", err)                    
                     pass            
+            
             file_upload_fk = self.file_upload_fk
             exchange_query_status_fk = self.exchange_query_status_fk
+            
             return (cli, site_postcode, None, exchange_code, None, avg_data_usage, None, file_upload_fk, exchange_query_status_fk)
 
     @staticmethod

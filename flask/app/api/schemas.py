@@ -94,6 +94,7 @@ class RecommendationSchema(Schema):
     exchange_code = fields.String()
     avg_data_usage = fields.Float()
     stop_sell_date = fields.String()
+    switch_off_date = fields.String()
     redis_cache_result_key = fields.String()
     product_pricing = fields.List(fields.Nested(PricingSchema))
 

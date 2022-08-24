@@ -37,7 +37,8 @@ def serialize_recommendation(recommendation):
         "exchange_code": recommendation[7],
         "avg_data_usage": recommendation[8],
         "stop_sell_date": recommendation[9],
-        "redis_cache_result_key": recommendation[10],        
+        "switch_off_date": recommendation[10],
+        "redis_cache_result_key": recommendation[11],
     }
 
 def serialize_price_recommendations(recommendations):
@@ -52,6 +53,7 @@ def serialize_price_recommendations(recommendations):
         "exchange_code": recommendations["exchange_code"],
         "avg_data_usage": recommendations["avg_data_usage"],
         "stop_sell_date": recommendations["stop_sell_date"],
+        "switch_off_date": recommendations["switch_off_date"],
         "redis_cache_result_key": recommendations["redis_cache_result_key"],
         "product_pricing": recommendations["product_pricing"],        
     }    

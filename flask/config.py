@@ -83,20 +83,26 @@ class Config(object):
     EMAIL_TEMPLATE_HTML = os.getenv("EMAIL_TEMPLATE_HTML", None)
     
     EMAIL_TEMPLATE_SCHEMA = {
-            "cli": "CLI",
-            "site_postcode": "Site Post Code",
-            "exchange_name": "Exchange Name",
-            "exchange_code": "Exchange Code",
-            "exchange_postcode": "Exchange Post Code",
-            "avg_data_usage": "Average Data Usage (MB)",
-            "stop_sell_date": "Stop Sell Date",    
-            "exchange_product_name": "Product Name",
-            "exchange_product_limit": "Product Limit" ,
-            "exchange_product_unit": "Product Unit",
-            "exchange_product_url": "Recommendation",    
-            "exchange_product_price": "Price (GBP)",
-            "exchange_product_term": "Term",
-            "created_at": "Created At"
+        "cli": "CLI",
+        "exchange_name": "Exchange Name",
+        "avg_data_usage": "Average Data Usage (MB)",
+        "file_email_address": "Email Address",
+        "exchange_code": "Exchange Code",
+        'redis_cache_result_key': "Cached Key",
+        "stop_sell_date": "Exchange Stop Sell Date",    
+        "switch_off_date": "Exchange Switch Off Date",
+        "exchange_query_status_id": "Exchange Query Status Id",
+        "site_postcode": "Site Post Code",        
+        "file_upload_id": "File Upload Id",
+        "exchange_query_id": "Exchange Query Id",
+        "exchange_postcode": "Exchange Post Code",    
+        "product_category": "Category",
+        "product_limit": "Inclusive Data (GB)",
+        "product_price": "Price (GBP)",
+        "product_class": "Class",
+        "product_name": "Product Name",
+        "product_unit": "Product Unit",    
+        "product_term": "Term",
     }
     
     schema = os.getenv("EMAIL_TEMPLATE_SCHEMA", None)

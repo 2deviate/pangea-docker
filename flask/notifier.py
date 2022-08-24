@@ -17,6 +17,7 @@ import time
 import argparse
 import tempfile
 import asyncio
+import datetime
 from run import create_app
 from app.db import db
 from config import configs
@@ -29,7 +30,13 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email_validator import validate_email, EmailNotValidError
+
 from openpyxl import Workbook, load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import PatternFill, Border, Side, Font
+
+from xlsxwriter.utility import xl_cell_to_rowcol
+
 
 logger = logging.getLogger(__name__)
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -62,6 +69,69 @@ email_template_text = None
 email_template_html = None
 email_template_schema = None
 
+class ExcelFormatter(object):
+    """Simple Excel Formatter Class"""
+
+    def __init__(self, workbook, worksheet) -> None:
+        self.workbook = workbook
+        self.worksheet = worksheet
+
+    @property
+    def rows(self):
+        return self.worksheet.dim_rowmax
+
+    @property
+    def columns(self):
+        return self.worksheet.dim_colmax
+
+    def set_border(self, range, border):
+        formatter = self.workbook.add_format({'border': border})
+        self.worksheet.conditional_format(range, {'type': 'no_errors', 'format': formatter})
+    
+    def set_background_color(self, range, color):
+        formatter = self.workbook.add_format()
+        formatter.set_pattern(1)
+        formatter.set_bg_color(color)
+        self.worksheet.conditional_format(range, {'type': 'text', 'criteria': 'containing', 'value': '', 'format': formatter})
+    
+    def set_width(self, range, width):
+        self.worksheet.set_column(range, width)
+    
+    def set_zoom(self, zoom):
+        self.worksheet.set_zoom(zoom)
+
+    def set_format(self, range, format):
+        formatter = self.workbook.add_format({'num_format': format})
+        self.worksheet.set_column(range, None, formatter)
+
+    def set_condition(self, range, criteria, format):
+        formatter = self.workbook.add_format(format)
+        condition = criteria | {'format': formatter}
+        self.worksheet.conditional_format(range, condition)        
+        
+    @staticmethod
+    def format(formatter):
+        dt0 = datetime.date.today()
+        dt1 = dt0 + datetime.timedelta(days=60)
+        dt2 = datetime.date.today()+datetime.timedelta(days=90)        
+        formatter.set_condition(f'F5:F{5+formatter.rows}', {'type': 'date', 'criteria': 'between', 'minimum': dt0, 'maximum': dt1}, {'bg_color': '#FFC7CE'})
+        formatter.set_condition(f'F5:F{5+formatter.rows}', {'type': 'date', 'criteria': 'between', 'minimum': dt1, 'maximum': dt2}, {'bg_color': '#FFEB9C'})
+        formatter.set_border('H1:H1', 0)
+        formatter.set_border('H2:H2', 0)
+        formatter.set_border('H3:H3', 0)
+        formatter.set_width('A:A', 15)
+        formatter.set_width('B:B', 20)
+        formatter.set_width('C:C', 22)
+        formatter.set_width('D:D', 20)
+        formatter.set_width('E:E', 25)
+        formatter.set_width('F:F', 25)
+        formatter.set_width('G:G', 25)
+        formatter.set_width('H:H', 18)
+        formatter.set_width('I:AI', 7)
+        formatter.set_background_color('I1:I1', '#E2EFDA')
+        formatter.set_background_color('R1:R1', '#C6E0B4')
+        formatter.set_background_color('AA1:AA1', '#A9D08E')        
+        formatter.set_zoom(75)
 
 def get_data(method, url=None, headers=None, body=None, **attrs):
     result = None
@@ -104,11 +174,19 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
         except IOError as err:
             logger.error(f"Unable to copy tmp file {tmpfil=}", err)
             raise    
-        # write excel sheet in template book
-        writer = pandas.ExcelWriter(tmpfil, engine="openpyxl", mode='a')
-        writer.book = load_workbook(tmpfil)
-        df.to_excel(writer, sheet_name='Sales Planner', index=True, merge_cells=True)                
+        
+        writer = pandas.ExcelWriter(tmpfil, engine='xlsxwriter', datetime_format='mm/dd/yyyy', date_format='mm/dd/yyyy')        
+        # write df
+        df.to_excel(writer, sheet_name='Sales Planner', merge_cells=True)
+        # get excel workbook and sheet
+        workbook = writer.book
+        worksheet = writer.sheets['Sales Planner']
+        # format sheet
+        formatter = ExcelFormatter(workbook, worksheet)
+        ExcelFormatter.format(formatter)
+        # save excel
         writer.save()
+        
         # open binary attachment
         fp = open(tmpfil, "rb")
         attachment = MIMEApplication(fp.read(), _subtype="xls")
@@ -349,32 +427,39 @@ async def process_notification(notification, dry_run):
         logger.error(f"Error executing  {url=}, {data=}, {dry_run=}", err)
         raise
     try:        
-        matrix = []
-        multi_level_index = ['Class', 'Category', 'Term']
-        single_level_index = ['Site Post Code', 'Exchange Name', 'Exchange Code', 'Average Data Usage (GB)', 'Exchange Stop Sell Date', 'Inclusive Data (GB)']
-        drop_columns = ['cli', 'exchange_query_status_id', 'exchange_query_id', 'redis_cache_result_key', 'file_email_address', 'file_upload_id']
+        products = []
+        email_template_schema
+        multi_level_index = [
+            email_template_schema['product_class'],
+            email_template_schema['product_category'],
+            email_template_schema['product_term']
+            ]
+        single_level_index = [
+            email_template_schema['cli'],
+            email_template_schema['site_postcode'],
+            email_template_schema['exchange_name'],
+            email_template_schema['exchange_code'],
+            email_template_schema['avg_data_usage'],
+            email_template_schema['stop_sell_date'],
+            email_template_schema['switch_off_date'],
+            email_template_schema['product_limit']
+        ]        
+        drop_columns = ['exchange_query_status_id', 'exchange_query_id', 'redis_cache_result_key', 'file_email_address', 'file_upload_id']
         for record in data['results']:
             product_df = pandas.DataFrame.from_dict(record['product_pricing'])
             product_df = product_df.drop(['product_name', 'product_unit'], axis=1)
-            product_df.rename(columns={
-                "product_term":"Term", 
-                "product_class": "Class", 
-                "product_limit": "Inclusive Data (GB)", 
-                "product_price": "Price", 
-                "product_category": "Category"}, inplace=True)            
+            product_df.rename(columns=email_template_schema, inplace=True)
             prices_df = pandas.DataFrame.from_dict(record)            
             prices_df = prices_df.drop(drop_columns+['product_pricing'], axis=1)
-            prices_df.rename(columns={
-                "avg_data_usage": "Average Data Usage (GB)", 
-                "exchange_code": "Exchange Code",
-                "stop_sell_date": "Exchange Stop Sell Date", 
-                "site_postcode": "Site Post Code", 
-                "exchange_name": "Exchange Name"}, inplace=True)            
+            prices_df.rename(columns=email_template_schema, inplace=True)
             combined_df = pandas.concat([product_df, prices_df], axis=1)
-            matrix.append(combined_df)
+            products.append(combined_df)
         # concat dataframes
-        df = pandas.concat(matrix)
-        df = pandas.pivot_table(df, index=single_level_index, columns=multi_level_index, values='Price')        
+        df = pandas.concat(products)
+        df[email_template_schema['stop_sell_date']] = pandas.to_datetime(df[email_template_schema['stop_sell_date']])
+        df[email_template_schema['switch_off_date']] = pandas.to_datetime(df[email_template_schema['switch_off_date']])        
+        df = pandas.pivot_table(df, index=single_level_index, columns=multi_level_index, values=email_template_schema['product_price'])
+        df.columns.names = (None, None, None) # reset multi-level index names
         # setup mail
         from_addr = email_from_address
         to_addrs = email_to_address.split(',')
@@ -420,8 +505,8 @@ async def _main(**kwargs):
         await process_notifications(dry_run)
     except Exception as ex:
         logger.error(f"Error processing uploads and notifications, {kwargs=}", ex)
-        return 1
-    return 0
+        return False
+    return True
 
 
 if __name__ == "__main__":
