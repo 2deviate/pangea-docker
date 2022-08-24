@@ -31,11 +31,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email_validator import validate_email, EmailNotValidError
 
-from openpyxl import Workbook, load_workbook
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import PatternFill, Border, Side, Font
-
-from xlsxwriter.utility import xl_cell_to_rowcol
+from xlsxwriter.utility import xl_cell_to_rowcol, xl_rowcol_to_cell
 
 
 logger = logging.getLogger(__name__)
@@ -69,6 +65,9 @@ email_template_text = None
 email_template_html = None
 email_template_schema = None
 
+excel_template_schema = None
+
+
 class ExcelFormatter(object):
     """Simple Excel Formatter Class"""
 
@@ -84,41 +83,55 @@ class ExcelFormatter(object):
     def columns(self):
         return self.worksheet.dim_colmax
 
-    def set_border(self, range, border):
-        formatter = self.workbook.add_format({'border': border})
-        self.worksheet.conditional_format(range, {'type': 'no_errors', 'format': formatter})
+    def set_border(self, xrange, border):
+        formatter = self.workbook.add_format()
+        formatter.set_border(border['style'])
+        formatter.set_bottom(border['bottom'])
+        formatter.set_top(border['top'])
+        formatter.set_left(border['left'])
+        formatter.set_right(border['right'])
+        self.worksheet.conditional_format(xrange, {'type': 'no_errors', 'format': formatter})
     
-    def set_background_color(self, range, color):
+    def set_background_color(self, xrange, color):
         formatter = self.workbook.add_format()
         formatter.set_pattern(1)
         formatter.set_bg_color(color)
-        self.worksheet.conditional_format(range, {'type': 'text', 'criteria': 'containing', 'value': '', 'format': formatter})
+        self.worksheet.conditional_format(xrange, {'type': 'text', 'criteria': 'containing', 'value': '', 'format': formatter})
     
-    def set_width(self, range, width):
-        self.worksheet.set_column(range, width)
+    def set_width(self, xrange, width):
+        self.worksheet.set_column(xrange, width)
     
     def set_zoom(self, zoom):
         self.worksheet.set_zoom(zoom)
 
-    def set_format(self, range, format):
+    def set_format(self, xrange, format):
         formatter = self.workbook.add_format({'num_format': format})
-        self.worksheet.set_column(range, None, formatter)
+        self.worksheet.set_column(xrange, None, formatter)
 
-    def set_condition(self, range, criteria, format):
+    def set_condition(self, xrange, criteria, format):
         formatter = self.workbook.add_format(format)
         condition = criteria | {'format': formatter}
-        self.worksheet.conditional_format(range, condition)        
+        self.worksheet.conditional_format(xrange, condition)
+
+    def set_formula(self, xrange, formula):
+        start_row, start_column = xl_cell_to_rowcol(xrange)
+        for row in range(start_row, self.rows+1):
+            cell_obj = self.worksheet.table[row][start_column]
+            cell_formula = formula.format(cell_value=cell_obj.number)
+            cell_ref = xl_rowcol_to_cell(row, start_column)
+            self.worksheet.write_array_formula(cell_ref, cell_formula, cell_obj.format)
         
     @staticmethod
     def format(formatter):
         dt0 = datetime.date.today()
         dt1 = dt0 + datetime.timedelta(days=60)
-        dt2 = datetime.date.today()+datetime.timedelta(days=90)        
-        formatter.set_condition(f'F5:F{5+formatter.rows}', {'type': 'date', 'criteria': 'between', 'minimum': dt0, 'maximum': dt1}, {'bg_color': '#FFC7CE'})
-        formatter.set_condition(f'F5:F{5+formatter.rows}', {'type': 'date', 'criteria': 'between', 'minimum': dt1, 'maximum': dt2}, {'bg_color': '#FFEB9C'})
-        formatter.set_border('H1:H1', 0)
-        formatter.set_border('H2:H2', 0)
-        formatter.set_border('H3:H3', 0)
+        dt2 = datetime.date.today()+datetime.timedelta(days=90) 
+        formatter.set_formula(f'H5:H{5+formatter.rows}', '=IF({cell_value}>0.0,{cell_value},"Unlimited")')
+        formatter.set_condition(f'F5:F{5+formatter.rows-4}', {'type': 'date', 'criteria': 'between', 'minimum': dt0, 'maximum': dt1}, {'bg_color': '#FFC7CE'})
+        formatter.set_condition(f'F5:F{5+formatter.rows-4}', {'type': 'date', 'criteria': 'between', 'minimum': dt1, 'maximum': dt2}, {'bg_color': '#FFEB9C'})
+        formatter.set_border('H1:H1', {'bottom': 0, 'top':0, 'left':0, 'right': 1, 'style': 1})
+        formatter.set_border('H2:H2', {'bottom': 0, 'top':0, 'left':0, 'right': 1, 'style': 1})
+        formatter.set_border('H3:H3', {'bottom': 1, 'top':0, 'left':0, 'right': 1, 'style': 1})
         formatter.set_width('A:A', 15)
         formatter.set_width('B:B', 20)
         formatter.set_width('C:C', 22)
@@ -130,7 +143,7 @@ class ExcelFormatter(object):
         formatter.set_width('I:AI', 7)
         formatter.set_background_color('I1:I1', '#E2EFDA')
         formatter.set_background_color('R1:R1', '#C6E0B4')
-        formatter.set_background_color('AA1:AA1', '#A9D08E')        
+        formatter.set_background_color('AA1:AA1', '#A9D08E')
         formatter.set_zoom(75)
 
 def get_data(method, url=None, headers=None, body=None, **attrs):
@@ -166,15 +179,14 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
 
     if not df.empty:
         tmpdir = tempfile.mkdtemp()
-        tmpfil = os.path.join(tmpdir,"template.xlsx")
+        tmpfil = os.path.join(tmpdir,"temp.xlsx")
         logger.info(f"created tmp file {tmpfil=}")
-        template = os.path.join(dir_path, f"app/data/downloads/template.xlsx")        
-        try:
-            shutil.copyfile(template, tmpfil)
-        except IOError as err:
-            logger.error(f"Unable to copy tmp file {tmpfil=}", err)
-            raise    
-        
+        # template = os.path.join(dir_path, f"app/data/downloads/template.xlsx")        
+        # try:
+        #     shutil.copyfile(template, tmpfil)
+        # except IOError as err:
+        #     logger.error(f"Unable to copy tmp file {tmpfil=}", err)
+        #     raise        
         writer = pandas.ExcelWriter(tmpfil, engine='xlsxwriter', datetime_format='mm/dd/yyyy', date_format='mm/dd/yyyy')        
         # write df
         df.to_excel(writer, sheet_name='Sales Planner', merge_cells=True)
@@ -186,7 +198,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
         ExcelFormatter.format(formatter)
         # save excel
         writer.save()
-        
+        writer.close()
         # open binary attachment
         fp = open(tmpfil, "rb")
         attachment = MIMEApplication(fp.read(), _subtype="xls")
@@ -417,7 +429,7 @@ async def process_uploads(dry_run):
         raise
 
 
-async def process_notification(notification, dry_run):
+async def process_notification(notification, dry_run):    
     file_upload_id, email_to_address, *_ = notification
     try:        
         # http://localhost/api/v1.0/pangea/product/pricing/recommendations/file/upload/3
@@ -427,8 +439,7 @@ async def process_notification(notification, dry_run):
         logger.error(f"Error executing  {url=}, {data=}, {dry_run=}", err)
         raise
     try:        
-        products = []
-        email_template_schema
+        products = []        
         multi_level_index = [
             email_template_schema['product_class'],
             email_template_schema['product_category'],
@@ -538,6 +549,8 @@ if __name__ == "__main__":
     email_template_text = app.config["EMAIL_TEMPLATE_TEXT"]
     email_template_html = app.config["EMAIL_TEMPLATE_HTML"]
     email_template_schema = app.config["EMAIL_TEMPLATE_SCHEMA"]
+    # setup excel template content
+    excel_template_schema = app.config["EXCEL_TEMPLATE_SCHEMA"]
     # parse args, invoke main
     p = argparse.ArgumentParser(description="Process command line parameters")
     p.add_argument(

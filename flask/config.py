@@ -110,9 +110,12 @@ class Config(object):
         try:
             EMAIL_TEMPLATE_SCHEMA = json.loads(schema) # acts as an override
         except Exception as err:
-            logger.error(f"Failed to parse template {schema=}, defaulting {EMAIL_TEMPLATE_SCHEMA=}", err)
-        
-    PROXY_SERVER = os.getenv("PROXY_SERVER", None)
+            logger.error(f"Failed to parse email template {schema=}, defaulting {EMAIL_TEMPLATE_SCHEMA=}", err)
+    
+    EXCEL_TEMPLATE_SCHEMA = {
+        "unlimited": "Unlimited"
+    }
+    
 
 class ProductionConfig(Config):
     """
