@@ -75,6 +75,10 @@
         "description": "Pangea",
         "url": "https://pangea-group.net/pangea-cloudconnect"
       }
+    },
+    {
+      "name": "Development Tools API",
+      "description": "Development Testing API"
     }
   ],
   "paths": {
@@ -85,7 +89,7 @@
         ],
         "summary": "Check health status of server",
         "description": "Check the health of the service",
-        "operationId": "getHealth",
+        "operationId": "pangea_health",
         "responses": {
           "200": {
             "description": "Success"
@@ -100,7 +104,7 @@
         ],
         "summary": "List all BT Openreach exchanges",
         "description": "List Openreach exchanges",
-        "operationId": "getExchanges",
+        "operationId": "pangea_exchanges",
         "responses": {
           "200": {
             "description": "Success",
@@ -131,8 +135,8 @@
           "Pangea Exchange API"
         ],
         "summary": "Get exchange information by Site Id",
-        "description": "Obtain information about a particular site, pass in site no.",
-        "operationId": "getExchangeSite",
+        "description": "Obtain information about a particular site, pass in site no",
+        "operationId": "exchanges_site",
         "parameters": [
           {
             "in": "path",
@@ -167,8 +171,8 @@
           "Pangea Exchange API"
         ],
         "summary": "Get exchange information by name",
-        "description": "Obtain information about a particular site, pass in site no.",
-        "operationId": "getExchangeName",
+        "description": "Obtain information about a particular site, pass in site no",
+        "operationId": "exchange_name",
         "parameters": [
           {
             "in": "path",
@@ -202,8 +206,8 @@
           "Pangea Exchange API"
         ],
         "summary": "Get exchange information by exchange code",
-        "description": "Obtain information about a particular site, pass in site no.",
-        "operationId": "getExchangeCode",
+        "description": "Obtain information about a particular site, pass in site no",
+        "operationId": "exchange_code",
         "parameters": [
           {
             "in": "path",
@@ -237,8 +241,8 @@
           "Pangea Exchange API"
         ],
         "summary": "Get exchange information by exchange location",
-        "description": "Obtain information about a particular site, pass in site no.",
-        "operationId": "getExchangeLocation",
+        "description": "Obtain information about a particular site, pass in site no",
+        "operationId": "exchange_location",
         "parameters": [
           {
             "in": "path",
@@ -273,7 +277,7 @@
         ],
         "summary": "Pangea SamKnows Exchange Info",
         "description": "",
-        "operationId": "getExchangeInfo",
+        "operationId": "exchange_info",
         "parameters": [
           {
             "in": "query",
@@ -321,7 +325,7 @@
         ],
         "summary": "Pangea SamKnows Exchange Info",
         "description": "",
-        "operationId": "getExchangeInfo",
+        "operationId": "exchange_search",
         "parameters": [
           {
             "in": "query",
@@ -369,13 +373,13 @@
         ],
         "summary": "Pangea Product Info",
         "description": "",
-        "operationId": "getProductInfo",
+        "operationId": "pangea_product",
         "parameters": [
           {
-            "in": "data_usage",
-            "name": "data usage",
+            "in": "query",
+            "name": "limit",
             "schema": {
-              "type": "float"
+              "type": "number"
             }
           }
         ],
@@ -403,20 +407,20 @@
         }
       }
     },
-    "/pangea/pricing": {
+    "/pangea/product/pricing": {
       "get": {
         "tags": [
           "Pangea Pricing API"
         ],
         "summary": "Pangea Product Info",
         "description": "",
-        "operationId": "getProductInfo",
+        "operationId": "product_pricing",
         "parameters": [
           {
-            "in": "data_usage",
-            "name": "data usage",
+            "in": "query",
+            "name": "limit",
             "schema": {
-              "type": "float"
+              "type": "number"
             }
           }
         ],
@@ -443,6 +447,64 @@
           }
         }
       }
+    },
+    "/pangea/product/pricing/recommendations/file/upload/{file_id}": {
+      "get": {
+        "tags": [
+          "Pangea Pricing API"
+        ],
+        "summary": "Pangea Product Info",
+        "description": "",
+        "operationId": "pangea_pricing_recommendations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/pangea/resource/script/etl": {
+      "get": {
+        "tags": [
+          "Development Tools API"
+        ],
+        "summary": "Executes the ETL Process",
+        "description": "Loads Open Reach Decommission Data (ETL)",
+        "operationId": "script_etl",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/pangea/resource/script/notify": {
+      "get": {
+        "tags": [
+          "Development Tools API"
+        ],
+        "summary": "Executes the Notifier Process",
+        "description": "Runs the Notifier Process",
+        "operationId": "script_notify",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -457,7 +519,7 @@
       "properties": {
         "product_name": {
           "type": "string",
-          "example": "4G Cat 4 PSTN Replacement Multi Net (O2 / VF / EE / 3) incl Static IP"
+          "example": "4G Cat 4 PSTN Replacement Multi Net (O2 / VF / EE / 3)"
         },
         "product_limit": {
           "type": "integer",
@@ -494,7 +556,7 @@
         },
         "product_name": {
           "type": "string",
-          "example": "4G Cat 4 PSTN Replacement Multi Net (O2 / VF / EE / 3) incl Static IP"
+          "example": "4G Cat 4 PSTN Replacement Multi Net (O2 / VF / EE / 3)"
         },
         "product_limit": {
           "type": "integer",

@@ -24,6 +24,7 @@ from config import configs
 import app.constants as const
 from dateutil import parser
 from functools import reduce
+from json import JSONDecodeError
 
 import smtplib
 from email.mime.text import MIMEText
@@ -181,12 +182,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
         tmpdir = tempfile.mkdtemp()
         tmpfil = os.path.join(tmpdir,"temp.xlsx")
         logger.info(f"created tmp file {tmpfil=}")
-        # template = os.path.join(dir_path, f"app/data/downloads/template.xlsx")        
-        # try:
-        #     shutil.copyfile(template, tmpfil)
-        # except IOError as err:
-        #     logger.error(f"Unable to copy tmp file {tmpfil=}", err)
-        #     raise        
+        # open writer 
         writer = pandas.ExcelWriter(tmpfil, engine='xlsxwriter', datetime_format='mm/dd/yyyy', date_format='mm/dd/yyyy')        
         # write df
         df.to_excel(writer, sheet_name='Sales Planner', merge_cells=True)
@@ -197,8 +193,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
         formatter = ExcelFormatter(workbook, worksheet)
         ExcelFormatter.format(formatter)
         # save excel
-        writer.save()
-        writer.close()
+        writer.save()        
         # open binary attachment
         fp = open(tmpfil, "rb")
         attachment = MIMEApplication(fp.read(), _subtype="xls")
@@ -223,7 +218,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
     msg_mixed["Cc"] = ",".join(cc_addrs)
     msg_mixed["Bcc"] = ",".join(bcc_addrs)
     msg_mixed["Subject"] = email_subject    
-
+    # send message
     try:
         logger.info(f"login to smpt sever {smtp_host=}, {smtp_port=}") 
         smtp_obj = smtplib.SMTP_SSL(host=smtp_host, port=smtp_port)
@@ -272,6 +267,8 @@ def set_status(proc, *args):
 
 
 def parse_data(data_obj):
+    if data_obj is None or len(data_obj) < 4: # valid json obj "{}"
+        return None
     try:
         data = json.loads(data_obj)        
         if data and isinstance(data, list):
@@ -280,17 +277,19 @@ def parse_data(data_obj):
             data = data.get("response", data)
             return data
         return None
-    except Exception as err:
+    except JSONDecodeError as err:
         logger.error(f"Error parsing data {data_obj=}", err)
         raise
 
 
-async def request_data(url, **kwargs):
+async def request_data(url, kwargs={}):
     data_obj = get_data(method="GET", url=url)
     data = parse_data(data_obj)
-    if data:
+    if data and kwargs:
         return kwargs | data
-    return kwargs
+    elif kwargs:
+        return kwargs
+    return None
 
 
 async def process_query(query, dry_run):
@@ -319,11 +318,11 @@ async def process_query(query, dry_run):
         set_status(const.SP_UPDATE_EXCHANGE_QUERY_STATUS, *args)
     # http://localhost/api/v1.0/pangea/product/pricing/result/13?limit=3.0
     url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/product/pricing/result/store/{exchange_query_id}?limit={avg_data_usage}"
-    t1 = request_data(url, **query)
-    
+    t1 = request_data(url, query)
+        
     criterion = cli if cli else site_postcode if site_postcode else exchange_code
     url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/sam/exchange/info?query={criterion}"
-    t2 = request_data(url, **query)
+    t2 = request_data(url, query)
 
     # prop and await results
     results = await asyncio.gather(t1, t2)
@@ -334,13 +333,15 @@ async def process_query(query, dry_run):
     exchange_code = data['exchange_code']
     if exchange_code:
         url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/decommission/exchange/search?query={exchange_code}"
-        data = await request_data(url, **data)
+        result = await request_data(url)
+        data = (data | result) if result else data
 
         implementation_date = data['implementation_date']
         
         if implementation_date is None:
             url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/sam/exchange/info?exchange_code={exchange_code}"
-            data = await request_data(url, **data)
+            result = await request_data(url)
+            data = (data | result) if result else data
     
     implementation_date = data.get('implementation_date')
 
@@ -434,10 +435,11 @@ async def process_notification(notification, dry_run):
     try:        
         # http://localhost/api/v1.0/pangea/product/pricing/recommendations/file/upload/3
         url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/product/pricing/recommendations/file/upload/{file_upload_id}"
-        data = await request_data(url)                    
+        data_obj = get_data(method='GET', url=url)
+        result = parse_data(data_obj)
     except Exception as err:
-        logger.error(f"Error executing  {url=}, {data=}, {dry_run=}", err)
-        raise
+        logger.error(f"Error executing  {url=}, {result=}, {dry_run=}", err)
+        raise Exception("process_notification failed")
     try:        
         products = []        
         multi_level_index = [
@@ -456,7 +458,12 @@ async def process_notification(notification, dry_run):
             email_template_schema['product_limit']
         ]        
         drop_columns = ['exchange_query_status_id', 'exchange_query_id', 'redis_cache_result_key', 'file_email_address', 'file_upload_id']
-        for record in data['results']:
+        # error if result not well formed
+        if result is None or not isinstance(result, dict) or len(result) == 0 or "results" not in result.keys():
+            logger.error(f"Parsed data error, {result=}, {notification=}")
+            raise Exception("process_notification failed")
+        # process result
+        for record in result['results']:
             product_df = pandas.DataFrame.from_dict(record['product_pricing'])
             product_df = product_df.drop(['product_name', 'product_unit'], axis=1)
             product_df.rename(columns=email_template_schema, inplace=True)
@@ -493,7 +500,7 @@ async def process_notification(notification, dry_run):
             args = (file_upload_id, const.FILE_STATUS_EXCEPTION)
             set_status(const.SP_UPDATE_FILE_UPLOAD_STATUS, *args)
         logger.error(f"Error sending mail, {notification=}, {email_to_address=}", err1)
-        raise
+        raise Exception("process_notification failed")
 
 
 async def process_notifications(dry_run):

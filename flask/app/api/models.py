@@ -362,7 +362,7 @@ class ScriptExecute(object):
     @staticmethod
     def execute(script):
         #sudo -E su root -c 'sh /home/app/notifier.sh'
-        exec_cmd = ["sudo", "-E", "su", "root", "-c", f"'sh {script}'"]
+        exec_cmd = [f"sudo -E su root -c 'sh {script}'"]
         logger.info(f"Invoking script, {script=}, as exec_cmd={' '.join(exec_cmd)}")
-        return subprocess.run(exec_cmd, capture_output=True)
+        return subprocess.run(exec_cmd, capture_output=True, shell=True)
 

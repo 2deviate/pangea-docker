@@ -400,50 +400,54 @@ class PricingAPI(Resource):
             return response_json(True, {}, constants.QUERY_MISSING_PARAMS)
 
         results = []
-        if limit and not (store_id or file_upload_id):
-            results, _ = Pricing.find_by_limit(limit)
-            if results and len(results) == 1:
-                return pricing_schema.dump(serialize_pricing(results[0]))
-            elif results and len(results) > 1:
-                return prices_schema.dump(
-                    [serialize_pricing(result) for result in results]
-                )            
-            else:
-                return response_json(True, results, constants.NO_DATA_RESULTS_FOUND)
+        try:
+            if limit and not (store_id or file_upload_id):
+                results, _ = Pricing.find_by_limit(limit)
+                if results and len(results) == 1:
+                    return pricing_schema.dump(serialize_pricing(results[0]))
+                elif results and len(results) > 1:
+                    return prices_schema.dump(
+                        [serialize_pricing(result) for result in results]
+                    )            
+                else:
+                    return response_json(True, results, constants.NO_DATA_RESULTS_FOUND)
 
-        if limit and store_id and not (file_upload_id):
-            results, _ = Pricing.find_by_limit(limit)            
-            _ = Pricing.set_by_limit(limit, store_id)
-            if results and len(results) == 1:
-                return pricing_schema.dump(serialize_pricing(results[0]))
-            elif results and len(results) > 1:
-                return prices_schema.dump(
-                    [serialize_pricing(result) for result in results]
-                )            
-            else:
-                return response_json(True, results, constants.NO_DATA_RESULTS_FOUND)
-        
-        if file_upload_id and not (limit or store_id):
-            results, _ = Pricing.get_recommendations(file_upload_id)
-            if results and len(results) == 1:
-                return recommendation_schema.dump(serialize_recommendation(results[0]))
-            elif results and len(results) > 1:
-                recommendations = []
-                for result in results:
-                    result_serialized = serialize_recommendation(result)
-                    result_serialized['product_pricing'] = []
-                    redis_cache_key = result_serialized.get("redis_cache_result_key", None)
-                    if redis_cache_key:
-                        prices = store.get(redis_cache_key)
-                        for price in prices[0]:
-                            price_serialized = serialize_pricing(price)
-                            result_serialized['product_pricing'].append(price_serialized)
-                    recommendations.append(result_serialized)
-                return recommendations_schema.dump(
-                    [serialize_price_recommendations(recommendation) for recommendation in recommendations]
-                )
-            else:
-                return response_json(True, results, constants.NO_DATA_RESULTS_FOUND)
+            if limit and store_id and not (file_upload_id):
+                results, _ = Pricing.find_by_limit(limit)            
+                _ = Pricing.set_by_limit(limit, store_id)
+                if results and len(results) == 1:
+                    return pricing_schema.dump(serialize_pricing(results[0]))
+                elif results and len(results) > 1:
+                    return prices_schema.dump(
+                        [serialize_pricing(result) for result in results]
+                    )            
+                else:
+                    return response_json(True, results, constants.NO_DATA_RESULTS_FOUND)
+            
+            if file_upload_id and not (limit or store_id):
+                results, _ = Pricing.get_recommendations(file_upload_id)
+                if results and len(results) == 1:
+                    return recommendation_schema.dump(serialize_recommendation(results[0]))
+                elif results and len(results) > 1:
+                    recommendations = []
+                    for result in results:
+                        result_serialized = serialize_recommendation(result)
+                        result_serialized['product_pricing'] = []
+                        redis_cache_key = result_serialized.get("redis_cache_result_key", None)
+                        if redis_cache_key:
+                            prices = store.get(redis_cache_key)
+                            for price in prices[0]:
+                                price_serialized = serialize_pricing(price)
+                                result_serialized['product_pricing'].append(price_serialized)
+                        recommendations.append(result_serialized)
+                    return recommendations_schema.dump(
+                        [serialize_price_recommendations(recommendation) for recommendation in recommendations]
+                    )
+                else:
+                    return response_json(True, results, constants.NO_DATA_RESULTS_FOUND)
+        except Exception as ex:
+            logger.error(f"error pricing, {store_id=}, {limit=}, {file_upload_id=}", ex)               
+            return response_json(False, {}, constants.DATA_OPERATION_UNSUCCESSFUL)
 
     def post(self):
         pass
