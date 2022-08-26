@@ -18,6 +18,7 @@ import argparse
 import tempfile
 import asyncio
 import datetime
+import jinja2
 from run import create_app
 from app.db import db
 from config import configs
@@ -25,9 +26,11 @@ import app.constants as const
 from dateutil import parser
 from functools import reduce
 from json import JSONDecodeError
+from flask import render_template
 
 import smtplib
 from email.mime.text import MIMEText
+from email.mime.image import  MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from email_validator import validate_email, EmailNotValidError
@@ -184,10 +187,15 @@ def valid_content(content):
     return is_valid
 
 
-def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
-    "Sends mail with excel attachment"
+def render_jinja_html(template_loc, file_name,**context):
+    return jinja2.Environment(
+        loader=jinja2.FileSystemLoader(template_loc+'/')).get_template(file_name).render(context)
 
-    logger.info(f"sending mail, {from_addr=}, {to_addrs=}, {cc_addrs=}, {bcc_addrs=}")
+
+def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, attachment):
+    "Sends mail with excel attachment"
+    
+    logger.info(f"sending mail, {from_addr=}, {to_addrs=}, {cc_addrs=}, {bcc_addrs=}, {attachment=}")
 
     msg_alternative = MIMEMultipart("alternative")
     if valid_content(email_template_text):
@@ -196,17 +204,26 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, df):
         msg_alternative.attach(text_part)
 
     if valid_content(email_template_html):
-        html_content_path = os.path.join(dir_path, "app/data/template/", email_template_html)
-        if os.path.exists(html_content_path):
-            with open(html_content_path, mode="r", encoding='utf-8') as txtfil:
-                html_content = txtfil.read()
-        if html_content:
-            html_part = MIMEText(html_content, "html")
-            msg_alternative.attach(html_part)
+        html_template_path = os.path.join(dir_path, "app/templates")
+        html_content = render_jinja_html(html_template_path, email_template_html, **attachment)
+        html_part = MIMEText(html_content, "html")
+        msg_alternative.attach(html_part)
     
     msg_mixed = MIMEMultipart("mixed")
     msg_mixed.attach(msg_alternative)
 
+    # This example assumes the image is in the current directory
+    imamge_content_path = os.path.join(dir_path, "app/static/img/", "pangea.jpg")
+    with open(imamge_content_path, 'rb') as imgfil:
+        image_content = imgfil.read()
+        if image_content:
+            msg_image = MIMEImage(image_content)        
+
+        # Define the image's ID as referenced above
+        msg_image.add_header('Content-ID', '<image1>')
+        msg_mixed.attach(msg_image)
+    
+    df = attachment.get('df', None)
     if not df.empty:
         tmpdir = tempfile.mkdtemp()
         tmpfil = os.path.join(tmpdir, "temp.xlsx")
@@ -545,6 +562,11 @@ async def process_notification(notification, dry_run):
             values=email_template_schema["product_price"],
         )
         df.columns.names = (None, None, None)  # reset multi-level index names
+        # aggregates
+        count = len(df)
+        pangea = df.sum().groupby(level=0).min().sum()
+        sogea = count * 30.0
+        attachment = {'pangea': "{:.2f}".format(pangea), 'sogea': "{:.2f}".format(sogea), 'count': count, 'df': df}
         # setup mail
         from_addr = email_from_address
         to_addrs = email_to_address.split(",")
@@ -554,7 +576,7 @@ async def process_notification(notification, dry_run):
         logger.info(f"sending mail {from_addr=}, {to_addrs=}, {cc=}, {bcc=}")
         args = (file_upload_id, const.FILE_STATUS_COMPLETE)
         if not dry_run:
-            send_mail(from_addr, to_addrs, cc, bcc, df=df)
+            send_mail(from_addr, to_addrs, cc, bcc, attachment=attachment)
             set_status(const.SP_UPDATE_FILE_UPLOAD_STATUS, *args)
         logger.info(f"sent mail {args=}, {df=}")
         if not dry_run:
