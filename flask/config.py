@@ -85,7 +85,7 @@ class Config(object):
     EMAIL_TEMPLATE_SCHEMA = {
         "cli": "CLI",
         "exchange_name": "Exchange Name",
-        "avg_data_usage": "Average Data Usage (MB)",
+        "avg_data_usage": "Average Data Usage (GB)",
         "file_email_address": "Email Address",
         "exchange_code": "Exchange Code",
         'redis_cache_result_key': "Cached Key",

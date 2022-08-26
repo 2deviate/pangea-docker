@@ -137,28 +137,12 @@ class ExcelFormatter(object):
         dt0 = datetime.date.today()
         dt1 = dt0 + datetime.timedelta(days=60)
         dt2 = datetime.date.today() + datetime.timedelta(days=90)
-        formatter.set_formula(
-            f"H5:H{5+formatter.rows}", '=IF({cell_value}>0.0,{cell_value},"Unlimited")'
-        )
-        formatter.set_condition(
-            f"F5:F{5+formatter.rows-4}",
-            {"type": "date", "criteria": "between", "minimum": dt0, "maximum": dt1},
-            {"bg_color": "#FFC7CE"},
-        )
-        formatter.set_condition(
-            f"F5:F{5+formatter.rows-4}",
-            {"type": "date", "criteria": "between", "minimum": dt1, "maximum": dt2},
-            {"bg_color": "#FFEB9C"},
-        )
-        formatter.set_border(
-            "H1:H1", {"bottom": 0, "top": 0, "left": 0, "right": 1, "style": 1}
-        )
-        formatter.set_border(
-            "H2:H2", {"bottom": 0, "top": 0, "left": 0, "right": 1, "style": 1}
-        )
-        formatter.set_border(
-            "H3:H3", {"bottom": 1, "top": 0, "left": 0, "right": 1, "style": 1}
-        )
+        formatter.set_formula(f"H5:H{5+formatter.rows}", '=IF({cell_value}>0.0,{cell_value},"Unlimited")')
+        formatter.set_condition(f"F5:F{5+formatter.rows-4}",{"type": "date", "criteria": "between", "minimum": dt0, "maximum": dt1},{"bg_color": "#FFC7CE"},)
+        formatter.set_condition(f"F5:F{5+formatter.rows-4}",{"type": "date", "criteria": "between", "minimum": dt1, "maximum": dt2},{"bg_color": "#FFEB9C"},)
+        formatter.set_border("H1:H1", {"bottom": 0, "top": 0, "left": 0, "right": 1, "style": 1})
+        formatter.set_border("H2:H2", {"bottom": 0, "top": 0, "left": 0, "right": 1, "style": 1})
+        formatter.set_border("H3:H3", {"bottom": 1, "top": 0, "left": 0, "right": 1, "style": 1})
         formatter.set_width("A:A", 15)
         formatter.set_width("B:B", 20)
         formatter.set_width("C:C", 22)
@@ -392,15 +376,17 @@ async def process_query(query, dry_run):
     exchange_code = data["exchange_code"]
     if exchange_code:
         url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/decommission/exchange/search?query={exchange_code}"
-        result = await request_data(url)
-        data = (data | result) if result else data
+        t1 = request_data(url, data)
+        results = await asyncio.gather(t1)
+        data = reduce(lambda x, y: x | y, results, {})
 
         implementation_date = data["implementation_date"]
 
         if implementation_date is None:
             url = f"http://{docker_server_name}:{docker_server_port}/api/v1.0/pangea/sam/exchange/info?exchange_code={exchange_code}"
-            result = await request_data(url)
-            data = (data | result) if result else data
+            t1 = request_data(url, data)
+            results = await asyncio.gather(t1)
+            data = reduce(lambda x, y: x | y, results, {})
 
     implementation_date = data.get("implementation_date")
 
