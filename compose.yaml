@@ -1,7 +1,7 @@
 services:
   db:
     build: mysql
-    image: 2deviate/pangea-db:v1.0
+    image: 2deviate/pangea-db:v1.1
     ports: 
       - '3306:3306'
     cap_add:
@@ -19,7 +19,7 @@ services:
       - backend  
   server:
     build: flask
-    image: 2deviate/pangea-server:v1.0
+    image: 2deviate/pangea-server:v1.1
     command: 'server'
     ports: 
       - '8000:8000'
@@ -76,7 +76,7 @@ services:
       retries: 3   
   proxy:
     build: nginx
-    image: 2deviate/pangea-proxy:v1.0
+    image: 2deviate/pangea-proxy:v1.1
     restart: always
     volumes:
       - ./nginx/default.conf:/tmp/default.conf
@@ -96,7 +96,7 @@ services:
       - frontend
   redis:
     build: redis
-    image: 2deviate/pangea-redis:v1.0
+    image: 2deviate/pangea-redis:v1.1
     ports:
       - '6379:6379'
     volumes:
