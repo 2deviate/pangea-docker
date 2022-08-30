@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
   
 env:
-  REGISTRY: 2deviate/pangea-docker
+  REGISTRY: ghcr.io
   IMAGE_NAME: 2deviate/pangea-proxy
   IMAGE_TAG: 1.0.${{ github.run_number }}
 
