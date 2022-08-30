@@ -110,4 +110,4 @@ volumes:
   db-data:
 networks:
   backend:
-  frontend:  
+  frontend:
