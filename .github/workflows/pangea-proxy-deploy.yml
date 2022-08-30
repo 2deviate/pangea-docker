@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
   
 env:
-  REGISTRY: 2deviate
-  IMAGE_NAME: 2deviate/pangea-docker
+  REGISTRY: 2deviate/pangea-docker
+  IMAGE_NAME: 2deviate/pangea-proxy
   IMAGE_TAG: 1.0.${{ github.run_number }}
 
 jobs:
