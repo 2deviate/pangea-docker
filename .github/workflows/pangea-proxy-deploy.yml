@@ -48,9 +48,10 @@ jobs:
         
     - name: Extract Docker metadata
       id: meta
-      uses: docker/metadata-action@v1
+      uses: docker/metadata-action@v3.6.0
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: type=sha,format=long
     
     - name: Build and push Docker image
       id: build-and-push
@@ -61,14 +62,19 @@ jobs:
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
         labels: ${{ steps.meta.outputs.labels }}
         
-    - name: Sign the published Docker image
-      if: ${{ github.event_name != 'pull_request' }}
+    - name: Sign image with a key
+      run: |
+        cosign sign --key env://COSIGN_PRIVATE_KEY ${TAGS}
+        env:
+          TAGS: ${{ steps.docker_meta.outputs.tags }}
+          COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSWORD}}
+
+    - name: Sign the images with GitHub OIDC Token **not production ready**
+      run: cosign sign ${TAGS}
       env:
-        COSIGN_EXPERIMENTAL: "true"
-      run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.output.digest }}
-        
-        
-        
+        TAGS: ${{ steps.docker_meta.outputs.tags }}
+        COSIGN_EXPERIMENTAL: true
         
         
       
