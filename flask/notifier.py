@@ -566,7 +566,7 @@ async def process_notification(notification, dry_run):
         count = len(df)
         pangea = df.sum().groupby(level=0).min().sum()
         sogea = count * 30.0
-        attachment = {'pangea': "{:.2f}".format(pangea), 'sogea': "{:.2f}".format(sogea), 'count': count, 'df': df}
+        attachment = {'pangea': "{:,.2f}".format(pangea), 'sogea': "{:,.2f}".format(sogea), 'count': count, 'df': df}
         # setup mail
         from_addr = email_from_address
         to_addrs = email_to_address.split(",")
