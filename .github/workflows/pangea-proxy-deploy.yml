@@ -1,0 +1,72 @@
+name: Pangea Proxy Deploy
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+    
+  workflow_dispatch:
+  
+env:
+  REGISTRY: 2deviate
+  IMAGE_NAME: 2deviate/pangea-docker
+  IMAGE_TAG: 1.0.${{ github.run_number }}
+
+jobs:
+
+  build-push-docker:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Install cosign
+      if: github.event_name != 'pull_request'
+      uses: sigstore/cosign-installer@de5c6db865c272bde755152889dbda79bccb85f7 #v1.3.0
+      with:
+        cosign-release: 'v1.3.0.'
+        
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v1
+      
+    - name: Log into registry ${{ env.REGISTRY }}
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v1
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract Docker metadata
+      id: meta
+      uses: docker/metadata-action@v1
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+    
+    - name: Build and push Docker image
+      id: build-and-push
+      uses: docker/build-push-action@v2
+      with:
+        context: nginx
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        labels: ${{ steps.meta.outputs.labels }}
+        
+    - name: Sign the published Docker image
+      if: ${{ github.event_name != 'pull_request' }}
+      env:
+        COSIGN_EXPERIMENTAL: "true"
+      run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.output.digest }}
+        
+        
+        
+        
+        
+      
