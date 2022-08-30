@@ -9,16 +9,17 @@ jobs:
       FLASK_APP: run.py
       FLASK_ENV: 'dev'
       FLASK_PORT: '8000'
-      FLASK_HOST: '0.0.0.0'
+      FLASK_HOST: '127.0.0.1'
       FLASK_DEBUG: '1'
       FLASK_APP_TEMPLATE_NAME: 'template.csv'
       FLASK_APP_UPLOAD_FOLDER: 'data/uploads'
       FLASK_APP_DOWNLOAD_FOLDER: 'data/downloads'
       FLASK_FILE_UPLOAD_MAX_LENGTH: 16*1000*1000
       CACHE_REDIS_HOST: 'redis'
+      CACHE_REDIS_HOST": '0.0.0.0'
       CACHE_REDIS_PORT: 6379
       CACHE_REDIS_PASSWORD: ${{ secrets.CACHE_REDIS_PASSWORD }}
-      CACHE_REDIS_DB: 0
+      CACHE_REDIS_DB: ''
       CACHE_REDIS_URL: ''
       CACHE_TYPE: 'RedisCache'
       CACHE_DEFAULT_TIMEOUT: 300
@@ -41,10 +42,13 @@ jobs:
       EMAIL_CC_ADDRESSES: 'admin@2deviate.com'
       EMAIL_ATTACHMENT: 'PSTN Sales Planner.xlsx'
       EMAIL_SUBJECT: 'Pangea Exchange Stop Sell Information'
+      EMAIL_TEMPLATE_TEXT: 'Pangea bulk query results'
+      EMAIL_TEMPLATE_HTML: ''
+      EMAIL_TEMPLATE_SCHEMA: ''
       PROXY_SERVER: 'server:8000'    
     steps:
       - uses: actions/checkout@v2
       - name: Build Stack
-        run: docker-compose up -d
+        run: docker-compose --env-file ./config/.env.dev up -d
       - name: Pangea Health Check
         run: docker run 2deviate/pangea-server:v1.0 curl -s --retry 10 --retry-connrefused http://localhost/api/v1.0/pangea/health
