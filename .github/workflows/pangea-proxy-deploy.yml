@@ -68,3 +68,4 @@ jobs:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
       run: cosign sign --key cosign.key ${{ env.REGISTRY }}/${{ github.actor }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}
+
