@@ -10,7 +10,7 @@ on:
   
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: 2deviate/pangea-proxy:v1.0
+  IMAGE_NAME: 2deviate/pangea-proxy
   IMAGE_TAG: 1.0.${{ github.run_number }}
 
 jobs:
