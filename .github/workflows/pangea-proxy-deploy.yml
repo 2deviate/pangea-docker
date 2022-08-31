@@ -60,5 +60,16 @@ jobs:
         context: nginx
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-        labels: ${{ steps.meta.outputs.labels }}        
+        labels: ${{ steps.meta.outputs.labels }}
+        
+    - name: Write signing key to disk
+      run: 'echo "$KEY" > cosign.key'
+      shell: bash
+      env:
+        KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
+    - name: Sign the published Docker image
+      env:
+        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      run: cosign sign --key cosign.key ${{ env.REGISTRY }}/${{ github.actor }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}
       
