@@ -64,6 +64,6 @@ jobs:
 
     - name: Sign the images      
       env:
-        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        COSIGN_PASSWORD: ${{ env.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
-      run: cosign sign --key ${{ secrets.COSIGN_PRIVATE_KEY }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      run: cosign sign --key ${{ env.COSIGN_PRIVATE_KEY }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
