@@ -52,14 +52,15 @@ jobs:
       id: meta
       uses: docker/metadata-action@v3.6.0
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v1.1
-        tags: type=sha,format=long
+        images: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          ghcr.io/${{ github.repository }}
     
     - name: Build and push Docker image
       id: build-and-push
       uses: docker/build-push-action@v2.9.0
       with:
-        context: . 
+        context: nginx 
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} 
         labels: ${{ steps.meta.outputs.labels }}
