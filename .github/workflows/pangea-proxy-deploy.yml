@@ -62,14 +62,8 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}  
 
-    - name: Write signing key to disk
-      run: 'echo "$KEY" > cosign.key'
-      shell: bash
-      env:
-        KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}      
-
     - name: Sign the images      
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
-      run: cosign sign --key cosign.key ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      run: cosign sign --key ${{ secrets.COSIGN_PRIVATE_KEY }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
