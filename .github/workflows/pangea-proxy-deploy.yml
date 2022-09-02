@@ -12,6 +12,8 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: 2deviate/pangea-proxy
   IMAGE_TAG: 1.2.${{ github.run_number }}
+  COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+  COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }
 
 jobs:
 
@@ -62,7 +64,7 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}  
 
-    - name: Sign the images      
+    - name: Sign the image with key ${{ env.COSIGN_PRIVATE_KEY }}      
       env:
         COSIGN_PASSWORD: ${{ env.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
