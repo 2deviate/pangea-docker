@@ -12,8 +12,9 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: 2deviate/pangea-proxy
   IMAGE_TAG: 1.2.${{ github.run_number }}
+  
   COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-  COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }
+  COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
 
 jobs:
 
