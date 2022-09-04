@@ -1,4 +1,4 @@
-name: Pangea Proxy Deploy
+name: Pangea Proxy Build Deploy
 
 on:
   push:
