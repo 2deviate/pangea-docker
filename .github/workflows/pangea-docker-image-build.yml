@@ -11,7 +11,9 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: 2deviate/pangea-proxy
-  IMAGE_TAG: ${{ secrets.MAJOR_VERSION }}.${{ secrets.MINOR_VERSION }}.${{ github.run_number }}
+  MAJOR_VERSION: ${{ secrets.MAJOR_VERSION }}
+  MINOR_VERSION: ${{ secrets.MINOR_VERSION }}  
+  IMAGE_TAG: ${{ env.MAJOR_VERSION }}.${{ env.MINOR_VERSION }}.${{ github.run_number }}
 
 jobs:
 
