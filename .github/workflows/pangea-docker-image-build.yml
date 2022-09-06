@@ -52,7 +52,7 @@ jobs:
           title: ${{ steps.semvers.outputs.patch }}
 
       - name: Global State
-      - id: identify
+        id: exportmilestone
         run: |
           export GIT_PR_SHA="${{ github.sha }}"
           export GIT_PR_SHA_SHORT="${GIT_PR_SHA:0:10}"
@@ -77,7 +77,9 @@ jobs:
     
     steps:
     
-    - run: |
+    - name: Preamble
+      id: preamble
+      run: |
         echo "${{ needs.generate.outputs.git_pr_sha }}"
         echo "${{ needs.generate.outputs.git_pr_sha_short }}"
     
