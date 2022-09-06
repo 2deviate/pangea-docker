@@ -12,11 +12,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: 2deviate/pangea-proxy
   
-defaults:
-  run:
-    shell: bash
-    working-directory: script
-  
 jobs:
 
   generate:
@@ -56,16 +51,13 @@ jobs:
         with:
           title: ${{ steps.semvers.outputs.patch }}
 
-      - name: Global State
+      - name: Global Cache
         id: exportmilestone
-        run: |
-          export TAGVERSION="1.3.28"
-          export TITLEVERSION="4.0.0"
-          echo "::set-output name=docker_pre_version::${TAGVERSION}"
-          echo "::set-output name=docker_title_version::${TITLEVERSION}"
-          outputs:
-            tag_version: ${{ steps.exportmilestone.outputs.docker_pre_version }}
-            title_version: ${{ steps.exportmilestone.outputs.docker_title_version }}
+        uses: actions/cache@v2
+        with:
+          path: ./*
+          semvers: ${{ steps.semvers.outputs.patch }}
+          previoustag: ${{ steps.previoustag.outputs.tag }}
 
   build:
     
@@ -84,9 +76,11 @@ jobs:
     
     - name: Preamble
       id: preamble
-      run: |
-        echo "${{ needs.generate.outputs.git_pr_sha }}"
-        echo "${{ needs.generate.outputs.git_pr_sha_short }}"
+      uses: actions/cache@v2
+      with:
+        path: ./*
+        semvers: ${{ semvers }}
+        previoustag: ${{ previoustag }}
     
     - name: Login to Docker Hub Registry
       uses: docker/login-action@v1
@@ -112,7 +106,7 @@ jobs:
       uses: docker/metadata-action@v3.6.0
       with:
         images: |
-          ${{ env.IMAGE_NAME }}:${{ needs.generate.outputs.tag_version }}
+          ${{ env.IMAGE_NAME }}:${{ steps.preamble.outputs.previoustag }}
           ${{ env.REGISTRY }}/${{ github.repository }}
     
     - name: Build and push Docker image
@@ -121,7 +115,7 @@ jobs:
       with:
         context: nginx 
         push: true
-        tags: ${{  needs.generate.outputs.title_version }}
+        tags: ${{ steps.preamble.outputs.semvers }}
 
     - name: Install Cosign
       uses: sigstore/cosign-installer@main
@@ -141,4 +135,4 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
-      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{  needs.generate.outputs.title_version }}
+      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{ steps.preamble.outputs.semvers }}
