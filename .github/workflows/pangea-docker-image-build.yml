@@ -14,7 +14,6 @@ env:
   
 jobs:
 
-
   build:
     
     name: Build Image
@@ -57,9 +56,6 @@ jobs:
       
     - name: Setup Docker Buildx
       uses: docker/setup-buildx-action@v2
-
-
-        
         
     - name: Build image
       id: version
