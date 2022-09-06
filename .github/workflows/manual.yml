@@ -3,19 +3,12 @@ name: Manual workflow
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
   pull_request:
 jobs:
   get-previous-tag:
     name: Test Get Previous Tag on ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: 'Get Previous tag'
