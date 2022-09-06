@@ -102,4 +102,4 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
-      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tags }}
+      run: cosign sign --key cosign.key ${{ steps.meta.outputs.tags }}
