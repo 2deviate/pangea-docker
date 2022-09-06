@@ -78,7 +78,6 @@ jobs:
       id: preamble
       uses: actions/cache@v2
       with:
-        path: ./*
         restore-keys: |
           ${{ semvers }}
           ${{ previoustag }}
