@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     
-    needs: generate
+    needs: [generate]
     
     permissions:
       contents: read
@@ -79,8 +79,9 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ./*
-        semvers: ${{ semvers }}
-        previoustag: ${{ previoustag }}
+        restore-keys: |
+          semvers: ${{ semvers }}
+          previoustag: ${{ previoustag }}
     
     - name: Login to Docker Hub Registry
       uses: docker/login-action@v1
