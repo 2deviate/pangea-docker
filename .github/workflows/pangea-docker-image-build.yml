@@ -16,7 +16,7 @@ jobs:
 
   build:
     
-    name: Build Image
+    name: Build Proxy Image
     runs-on: ubuntu-latest
     environment: dev
     
@@ -40,30 +40,30 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}    
 
-    - name: Checkout repository
+    - name: Checkout Repository
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
         
-    - name: 'Get tag'
+    - name: Build Tag
       id: tag
       uses: 'WyriHaximus/github-action-get-previous-tag@8a0e045f02c0a3a04e1452df58b90fc7e555e950'
 
-    - name: Setup Tag
+    - name: Echo Tag
       run: |
         TAG=${{ steps.tag.outputs.tag }}
         echo "TAG=$TAG" >> "$GITHUB_ENV"
         
-    - name: Build Tag
+    - name: Increment Symantic Versioning
       id: version
       run: |
         tag_v=$(git describe --tags $(git rev-list --tags --max-count=1))
         tag=$(echo $tag_v | sed 's/v//')
 
-    - name: Setup Docker Buildx
+    - name: Setup Docker Image Builder
       uses: docker/setup-buildx-action@v2
 
-    - name: Retrieve metadata
+    - name: Retrieve Docker Image Metadata
       id: meta
       uses: docker/metadata-action@v3.6.0
       with:
