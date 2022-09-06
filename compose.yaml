@@ -76,7 +76,7 @@ services:
       retries: 3   
   proxy:
     build: nginx
-    image: 2deviate/pangea-proxy:1.3.6
+    image: 2deviate/pangea-proxy:1.3.12
     restart: always
     volumes:
       - ./nginx/default.conf:/tmp/default.conf
