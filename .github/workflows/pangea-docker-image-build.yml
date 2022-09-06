@@ -54,13 +54,13 @@ jobs:
       - name: Global State
         id: exportmilestone
         run: |
-          export GIT_PR_SHA="${{ github.sha }}"
-          export GIT_PR_SHA_SHORT="${GIT_PR_SHA:0:10}"
-          echo "::set-output name=git_pr_sha::${GIT_PR_SHA}"
-          echo "::set-output name=git_pr_sha_short::${GIT_PR_SHA_SHORT}"
+          export TAGVERSION="${{ steps.previoustag.outputs.version }}"
+          export TITLEVERSION="${{ steps.createmilestone.outputs.number}}"
+          echo "::set-output name=docker_pre_version::${TAGVERSION}"
+          echo "::set-output name=docker_title_version::${TITLEVERSION}"
           outputs:
-            git_pr_sha: ${{ steps.identify.outputs.git_pr_sha }}
-            git_pr_sha_short: ${{ steps.identify.outputs.git_pr_sha_short }}
+            tag_version: ${{ steps.exportmilestone.outputs.docker_pre_version }}
+            title_version: ${{ steps.exportmilestone.outputs.docker_title_version }}
 
   build:
     
@@ -107,7 +107,7 @@ jobs:
       uses: docker/metadata-action@v3.6.0
       with:
         images: |
-          ${{ env.IMAGE_NAME }}:${{ needs.generate.outputs.output1 }}
+          ${{ env.IMAGE_NAME }}:${{ needs.generate.outputs.tag_version }}
           ${{ env.REGISTRY }}/${{ github.repository }}
     
     - name: Build and push Docker image
@@ -116,7 +116,7 @@ jobs:
       with:
         context: nginx 
         push: true
-        tags: ${{  needs.generate.outputs.output2 }}
+        tags: ${{  needs.generate.outputs.title_version }}
 
     - name: Install Cosign
       uses: sigstore/cosign-installer@main
@@ -136,4 +136,4 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
-      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{  needs.generate.outputs.output2 }}
+      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{  needs.generate.outputs.title_version }}
