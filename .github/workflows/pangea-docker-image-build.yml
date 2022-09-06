@@ -20,6 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     
+    outputs:
+      output1: ${{ steps.previoustag.outputs.tag }}
+      output2: ${{ steps.createmilestone.outputs.number }}
+    
     permissions:
       contents: read
       packages: write
@@ -90,7 +94,7 @@ jobs:
       uses: docker/metadata-action@v3.6.0
       with:
         images: |
-          ${{ env.IMAGE_NAME }}:${{ needs.generate.steps.previoustag.outputs.tag }}
+          ${{ env.IMAGE_NAME }}:${{ needs.generate.outputs.output1 }}
           ${{ env.REGISTRY }}/${{ github.repository }}
     
     - name: Build and push Docker image
@@ -99,7 +103,7 @@ jobs:
       with:
         context: nginx 
         push: true
-        tags: ${{  needs.generate.steps.createmilestone.outputs.number }}
+        tags: ${{  needs.generate.outputs.output2 }}
 
     - name: Install Cosign
       uses: sigstore/cosign-installer@main
@@ -119,4 +123,4 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
-      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{  needs.generate.steps.createmilestone.outputs.number }}
+      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{  needs.generate.outputs.output2 }}
