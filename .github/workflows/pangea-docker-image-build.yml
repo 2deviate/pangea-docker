@@ -54,8 +54,8 @@ jobs:
       - name: Global State
         id: exportmilestone
         run: |
-          export TAGVERSION="${{ steps.previoustag.outputs.version }}"
-          export TITLEVERSION="${{ steps.createmilestone.outputs.number}}"
+          export TAGVERSION="${{ steps.semvers.outputs.version }}"
+          export TITLEVERSION="${{ steps.createmilestone.outputs.title}}"
           echo "::set-output name=docker_pre_version::${TAGVERSION}"
           echo "::set-output name=docker_title_version::${TITLEVERSION}"
           outputs:
