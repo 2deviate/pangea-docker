@@ -12,6 +12,11 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: 2deviate/pangea-proxy
   
+defaults:
+  run:
+    shell: bash
+    working-directory: script
+  
 jobs:
 
   generate:
@@ -54,8 +59,8 @@ jobs:
       - name: Global State
         id: exportmilestone
         run: |
-          export TAGVERSION="${{ steps.semvers.outputs.version }}"
-          export TITLEVERSION="${{ steps.createmilestone.outputs.title}}"
+          export TAGVERSION="1.3.28"
+          export TITLEVERSION="4.0.0"
           echo "::set-output name=docker_pre_version::${TAGVERSION}"
           echo "::set-output name=docker_title_version::${TITLEVERSION}"
           outputs:
