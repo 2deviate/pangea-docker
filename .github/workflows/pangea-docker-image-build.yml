@@ -89,7 +89,7 @@ jobs:
       uses: docker/metadata-action@v3.6.0
       with:
         images: |
-          ${{ env.IMAGE_NAME }}:${{ steps.previoustag.outputs.actual }}
+          ${{ env.IMAGE_NAME }}:${{ steps.createmilestone.outputs.title }}
           ${{ env.REGISTRY }}/${{ github.repository }}
     
     - name: Build and push Docker image
