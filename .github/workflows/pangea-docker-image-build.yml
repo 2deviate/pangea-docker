@@ -14,19 +14,10 @@ env:
   
 jobs:
 
-  update-semver:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: haya14busa/action-update-semver@v1
-        id: version
-        with:
-          major_version_tag_only: true  # (optional, default is "false")
 
   build:
     
     name: Build Image
-    needs: [update-semver]
     runs-on: ubuntu-latest
     environment: dev
     
@@ -38,6 +29,17 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        
+    - name: 'Get tag'
+      id: tag
+      uses: 'WyriHaximus/github-action-get-previous-tag@8a0e045f02c0a3a04e1452df58b90fc7e555e950'
+
+    - name: Set correct environment
+      run: |
+        TAG=${{ steps.tag.outputs.tag }}
+        echo "TAG=$TAG" >> "$GITHUB_ENV"        
       
     - name: Build image
       id: version
@@ -67,7 +69,11 @@ jobs:
       with:
         images: |
           ${{ env.IMAGE_NAME }}
-          ${{ env.REGISTRY }}/${{ github.repository }}
+          ${{ env.REGISTRY }}/${{ github.repository }}        
+        tags: |
+          type=semver,pattern={{major}}.{{minor}}.{{patch}},value=${{ env.TAG }}
+          type=semver,pattern={{major}}.{{minor}},value=${{ env.TAG }}
+          type=semver,pattern={{major}},value=${{ env.TAG }}          
     
     - name: Build and push Docker image
       id: build-and-push
@@ -75,7 +81,7 @@ jobs:
       with:
         context: nginx 
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
+        tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
     - name: Install Cosign
@@ -96,4 +102,4 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
-      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.tag }}
+      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tags }}
