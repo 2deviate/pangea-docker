@@ -61,9 +61,8 @@ jobs:
       id: meta
       uses: docker/metadata-action@v3.6.0
       with:
-        images:
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
           type=semver,pattern={{major}}.{{minor}}.{{patch}},value=${{ env.TAG }}          
     
     - name: Build and push Docker image
