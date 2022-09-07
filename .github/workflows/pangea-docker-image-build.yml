@@ -56,8 +56,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ./*
-          semvers: ${{ steps.semvers.outputs.patch }}
-          previoustag: ${{ steps.previoustag.outputs.tag }}
+          key: ${{ runner.os }}-build-${{ steps.semvers.outputs.patch }}-version-${{ steps.previoustag.outputs.tag }}
 
   build:
     
@@ -79,8 +78,9 @@ jobs:
       uses: actions/cache@v2
       with:
         restore-keys: |
-          ${{ semvers }}
-          ${{ previoustag }}
+          ${{ runner.os }}-build-${{ steps.semvers.outputs.patch }}
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
     
     - name: Login to Docker Hub Registry
       uses: docker/login-action@v1
