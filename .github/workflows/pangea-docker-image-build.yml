@@ -110,9 +110,10 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: |
-          ${{ env.IMAGE_NAME }}
-          ${{ env.REGISTRY }}/${{ github.repository }}
+        images: ${{ env.IMAGE_NAME }}          
+        tag-custom: latest
+        tag-semver: |
+          {{raw}}
     
     - name: Build and push Docker image
       id: build-and-push
@@ -120,8 +121,8 @@ jobs:
       with:
         context: nginx 
         push: ${{ github.event_name != 'pull_request' }}        
-        tags: ${{ env.IMAGE_NAME }}:${{ steps.preamble.outputs.releasetag }}
-        labels: ${{ steps.meta.outputs.labels }}        
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}      
 
     - name: Install Cosign
       uses: sigstore/cosign-installer@main
