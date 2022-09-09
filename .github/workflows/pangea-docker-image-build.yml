@@ -112,12 +112,9 @@ jobs:
       uses: docker/metadata-action@v4
       with:
         images: |
-          name/app
+          ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.preamble.outputs.previoustag }}
         tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}          
+          type=semver,pattern=${{ steps.preamble.outputs.releasetag }}
     
     - name: Build and push Docker image
       id: build-and-push
