@@ -107,9 +107,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v3.6.0
       with:
-        images: |
-          ${{ env.IMAGE_NAME }}:${{ steps.preamble.outputs.previoustag }}
-          ${{ env.REGISTRY }}/${{ github.repository }}
+        images: ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.preamble.outputs.previoustag }}
     
     - name: Build and push Docker image
       id: build-and-push
