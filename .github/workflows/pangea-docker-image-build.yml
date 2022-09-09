@@ -105,9 +105,10 @@ jobs:
 
     - name: Retrieve Docker Image Metadata
       id: meta
-      uses: docker/metadata-action@v3.6.0
+      uses: docker/metadata-action@v4
       with:
-        images: ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.preamble.outputs.previoustag }}
+        images: |
+          ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.preamble.outputs.previoustag }}
     
     - name: Build and push Docker image
       id: build-and-push
