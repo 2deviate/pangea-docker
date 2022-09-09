@@ -2,9 +2,13 @@ name: Pangea Proxy Build Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - 'main'
     
   workflow_dispatch:
   
@@ -102,13 +106,18 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}    
-
-    - name: Retrieve Docker Image Metadata
+          
+    - name: Docker meta
       id: meta
       uses: docker/metadata-action@v4
       with:
         images: |
-          ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.preamble.outputs.previoustag }}
+          name/app
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}          
     
     - name: Build and push Docker image
       id: build-and-push
@@ -116,7 +125,8 @@ jobs:
       with:
         context: nginx 
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.IMAGE_NAME }}:${{ steps.preamble.outputs.releasetag }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
 
     - name: Install Cosign
       uses: sigstore/cosign-installer@main
