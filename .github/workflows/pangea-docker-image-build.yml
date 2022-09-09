@@ -2,24 +2,77 @@ name: Pangea Proxy Build Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - 'main'
     
   workflow_dispatch:
   
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: 2deviate/pangea-proxy
-  MAJOR_VERSION: ${{ secrets.MAJOR_VERSION }}
-  MINOR_VERSION: ${{ secrets.MINOR_VERSION }}  
   
 jobs:
 
-  build:
+  generate:
+  
+    name: Generate Tags
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.set_release_number.outputs.release_number }}
+      previous_version: ${{ steps.set_release_number.outputs.previous_number }}
+    
+    environment: dev
+    
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
 
+    steps:
+    
+      - uses: actions/checkout@v2.2.0
+        with:
+          fetch-depth: 0 # Required due to the way Git works, without it this action won't be able to find any or the correct tags
+      
+      - name: Get Previous tag
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          fallback: 1.0.0 # Optional fallback tag to use when no tag can be found
+      
+      - name: Get next minor version
+        id: semvers
+        uses: "WyriHaximus/github-action-next-semvers@v1"
+        with:
+          version: ${{ steps.previoustag.outputs.tag }}
+      
+      - name: Create new milestone
+        id: createmilestone
+        uses: "WyriHaximus/github-action-create-milestone@v1"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          title: ${{ steps.semvers.outputs.patch }}
+          
+      - name: Set release version
+        id: set_release_number
+        run: |
+          RELEASE_VERSION=${{ steps.semvers.outputs.patch }}
+          PREVIOUS_VERSION=${{ steps.previoustag.outputs.tag }}
+          echo "::set-output name=release_number::$RELEASE_VERSION"
+          echo "::set-output name=previous_number::$PREVIOUS_VERSION"
+  build:
+    
+    name: Build Proxy Image
     runs-on: ubuntu-latest
     environment: dev
+    
+    needs: [generate]
     
     permissions:
       contents: read
@@ -27,28 +80,35 @@ jobs:
       id-token: write
     
     steps:
-    - name: Checkout repository
+    
+    - name: Preamble
+      id: preamble
+      run: |
+        echo "::set-output name=releasetag::${{ needs.generate.outputs.release_version }}"
+        echo "::set-output name=previoustag::${{ needs.generate.outputs.previous_version }}"
+        
+    - name: Checkout Repository      
       uses: actions/checkout@v3
-      
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Log in to Docker Hub Registry
+        
+    - name: Setup Docker Image Builder
+      uses: docker/setup-buildx-action@v2        
+        
+    - name: Login to Docker Hub Registry
       uses: docker/login-action@v1
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}      
         
-    - name: Log in to the Github Package Registry
+    - name: Login to the Github Package Registry
       uses: docker/login-action@v2
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Extract Docker metadata
+        password: ${{ secrets.GITHUB_TOKEN }}    
+          
+    - name: Docker meta
       id: meta
-      uses: docker/metadata-action@v3.6.0
+      uses: docker/metadata-action@v4
       with:
         images: |
           ${{ env.IMAGE_NAME }}
@@ -59,9 +119,9 @@ jobs:
       uses: docker/build-push-action@v2.9.0
       with:
         context: nginx 
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.IMAGE_NAME }}:${{ env.MAJOR_VERSION }}.${{ env.MINOR_VERSION }}.${{ github.run_number }}
-        labels: ${{ steps.meta.outputs.labels }}
+        push: ${{ github.event_name != 'pull_request' }}        
+        tags: ${{ env.IMAGE_NAME }}:${{ steps.preamble.outputs.releasetag }}
+        labels: ${{ steps.meta.outputs.labels }}        
 
     - name: Install Cosign
       uses: sigstore/cosign-installer@main
@@ -81,4 +141,4 @@ jobs:
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         COSIGN_EXPERIMENTAL: 1      
-      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{ env.MAJOR_VERSION }}.${{ env.MINOR_VERSION }}.${{ github.run_number }}
+      run: cosign sign --key cosign.key ${{ env.IMAGE_NAME }}:${{ steps.preamble.outputs.releasetag }}
