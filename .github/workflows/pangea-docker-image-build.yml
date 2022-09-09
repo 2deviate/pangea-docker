@@ -1,15 +1,12 @@
-name: Pangea Proxy Build Deploy
+name: Pangea Proxy Workflow
 
 on:
   push:
     branches:
       - 'main'
-    tags:
-      - 'v*'
   pull_request:
     branches:
-      - 'main'
-    
+      - 'main'    
   workflow_dispatch:
   
 env:
@@ -20,7 +17,7 @@ jobs:
 
   generate:
   
-    name: Generate Tags
+    name: Preamble Job
     runs-on: ubuntu-latest
     outputs:
       release_version: ${{ steps.set_release_number.outputs.release_number }}
@@ -68,7 +65,7 @@ jobs:
           echo "::set-output name=previous_number::$PREVIOUS_VERSION"
   build:
     
-    name: Build Proxy Image
+    name: Build Sign and Deploy
     runs-on: ubuntu-latest
     environment: dev
     
