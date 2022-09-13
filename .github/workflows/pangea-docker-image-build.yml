@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - 'main'
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - 'main'    
+  
   workflow_dispatch:
   
 env:
@@ -104,9 +107,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}      
             
-    - name: Build image
+    - name: Build Compose Images
       run: docker compose -f compose.yaml build
-        
+     
     - name: Push image to Container Registry
       run: docker compose -f compose.yaml push
 
