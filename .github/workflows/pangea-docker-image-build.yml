@@ -105,4 +105,4 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}      
             
     - name: Build image
-      run: docker compose -f compose.yml build
+      run: docker compose -f compose.yaml build
