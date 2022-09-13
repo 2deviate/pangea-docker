@@ -15,7 +15,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: 2deviate/pangea-docker
-  SYMANTIC_VERSION: release_version
+  SYMANTIC_VERSION: ${{ steps.preamble.outputs.releasetag }}
   
 jobs:
 
@@ -109,7 +109,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}      
             
     - name: Build Compose Images
-      run: SYMANTIC_VERSION=${{ steps.preamble.outputs.releasetag }} docker compose -f compose.yaml build
+      run: docker compose -f compose.yaml build
      
     - name: Push image to Container Registry
       run: docker compose -f compose.yaml push
