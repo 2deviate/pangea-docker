@@ -106,3 +106,7 @@ jobs:
             
     - name: Build image
       run: docker compose -f compose.yaml build
+        
+    - name: Push image to Container Registry
+      run: docker compose -f docker-compose.yaml push
+
