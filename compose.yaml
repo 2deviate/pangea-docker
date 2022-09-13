@@ -2,7 +2,7 @@ version: "3"
 services:
   db:
     build: mysql
-    image: 2deviate/pangea-db
+    image: "2deviate/pangea-db:${SYMANTIC_VERSION}"
     ports: 
       - '3306:3306'
     cap_add:
