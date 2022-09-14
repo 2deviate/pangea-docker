@@ -20,7 +20,7 @@ jobs:
 
   generate:
   
-    name: Preamble Job
+    name: Generate Tag Version
     runs-on: ubuntu-latest
     outputs:
       release_version: ${{ steps.set_release_number.outputs.release_number }}
@@ -70,11 +70,9 @@ jobs:
   build:
     
     name: Build Sign and Deploy
-    runs-on: ubuntu-latest
-    environment: dev
-    
-    needs: [generate]
-    
+    runs-on: ubuntu-latest    
+    environment: dev    
+    needs: [generate]    
     permissions:
       contents: read
       packages: write
@@ -108,7 +106,9 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}      
             
     - name: Build Compose Images
-      run: SYMANTIC_VERSION=${{ steps.preamble.outputs.releasetag }} docker compose -f compose.yaml build
+      env: 
+        SYMANTIC_VERSION: ${{ steps.preamble.outputs.releasetag }}
+      run: docker compose -f compose.yaml build
      
     - name: Push image to Container Registry
       run: docker compose -f compose.yaml push
