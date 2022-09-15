@@ -107,7 +107,7 @@ jobs:
             
     - name: Build Compose Images
       env: 
-        SYMANTIC_VERSION: ${{ steps.preamble.outputs.releasetag }}
+        IMAGE_VERSION: ${{ steps.preamble.outputs.releasetag }}
       run: docker compose -f compose.yaml build
      
     - name: Push image to Container Registry
