@@ -6,6 +6,10 @@ The web server uses several API's to bind data together and determine which exch
 
 ## Getting Started
 
+### Version
+
+Symantic versioning is used for docker image deployment (Dockerhub).  Each image is tagged with version via GitHub Workflow Actions.
+
 ### Dependencies
 * Docker, Alpine Images
 * RDS MySql Database Image
@@ -28,11 +32,12 @@ In this example a t2.micro aws EC2 instance is setup via the EC2 dashboard.  See
     Install Docker CLI
     Docker login <<Provide Repo Credentials>>
     
-    docker pull << repo/tag >> e.g. docker pull 2deviate/pangea-server:v1.0
+    docker pull << repo/tag >> e.g. docker pull 2deviate/pangea-server:v1.0    
+    docker compose --env-file ./config/.env.dev pull
 
 ### Building Docker Images
     docker compose --env-file  << environment file >> up -d
-    docker compose --env-file ./config/.env.dev up -d
+    docker compose --env-file ./config/.env.dev up -d    
 
 ### Publishing Docker Images
     docker compose push
@@ -53,7 +58,8 @@ In this example a t2.micro aws EC2 instance is setup via the EC2 dashboard.  See
 
 ### Setup environment variable (*DEBUG PURPOSES ONLY)
     All environment variables are provided in a single file, .env.<<environment>> e.g. .env.dev
-
+    
+    IMAGE_TAG                       - Version
     LOGFILENAME                     - log file name for application (web)
     LOGLEVEL                        - logging level 
     FLASK_APP                       - Flask (www) Application Name
@@ -110,9 +116,19 @@ etl.sh -> invokes etl.py (once a day)
     Craig Petersen[craig@2deviate.com)
 
 ## Version History
-    0.2
-        * Initial Release
-        * Added File Upload
+    0.1
+        * Initial Alpha Release
+        * Added File Uploads
+    1.1
+        * Release of SoW Part I
+        * Initial Release of Template
+    1.3 
+        * Pangea SoW Part II
+        * Bug Fixes and Schema Changes
+    1.4 
+        *Pangea SoW Part III
+        * Excel Formatting Support
+    
 
 ## License
 This project is licensed under 2DEVIATE LTD License agreement.
