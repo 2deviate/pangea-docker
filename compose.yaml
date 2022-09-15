@@ -3,8 +3,8 @@ services:
   db:
     build: mysql
     environment:
-      IMAGE_VERSION: ${SYMANTIC_VERSION}
-    image: "2deviate/pangea-db:${IMAGE_VERSION}"
+      IMAGE_TAG: ${IMAGE_TAG}
+    image: "2deviate/pangea-db:${IMAGE_TAG}"
     ports: 
       - '3306:3306'
     cap_add:
