@@ -14,7 +14,8 @@ on:
   
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: 2deviate/pangea-docker
+  IMAGE_TAG: 'latest'
+  IMAGE_NAME: 2deviate/pangea-docker  
   
 jobs:
 
@@ -107,8 +108,8 @@ jobs:
             
     - name: Build Compose Images
       env: 
-        IMAGE_VERSION: ${{ steps.preamble.outputs.releasetag }}
-      run: docker compose -f compose.yaml build
+        IMAGE_TAG: ${{ steps.preamble.outputs.releasetag }}
+      run: IMAGE_TAG=${{env.IMAGE_TAG }} docker compose -f compose.yaml build
      
     - name: Push image to Container Registry
       run: docker compose -f compose.yaml push
