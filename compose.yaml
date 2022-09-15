@@ -1,9 +1,6 @@
-version: "3"
 services:
   db:
     build: mysql
-    environment:
-      IMAGE_TAG: ${IMAGE_TAG}
     image: "2deviate/pangea-db:${IMAGE_TAG}"
     ports: 
       - '3306:3306'
@@ -22,7 +19,7 @@ services:
       - backend  
   server:
     build: flask
-    image: 2deviate/pangea-server
+    image: "2deviate/pangea-server:${IMAGE_TAG}"
     command: 'server'
     ports: 
       - '8000:8000'
@@ -79,7 +76,7 @@ services:
       retries: 3   
   proxy:
     build: nginx
-    image: 2deviate/pangea-proxy
+    image: "2deviate/pangea-proxy:${IMAGE_TAG}"
     restart: always
     volumes:
       - ./nginx/default.conf:/tmp/default.conf
@@ -99,7 +96,7 @@ services:
       - frontend
   redis:
     build: redis
-    image: 2deviate/pangea-redis
+    image: "2deviate/pangea-redis:${IMAGE_TAG}"
     ports:
       - '6379:6379'
     volumes:
