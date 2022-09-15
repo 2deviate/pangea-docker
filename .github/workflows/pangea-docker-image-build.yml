@@ -21,7 +21,7 @@ jobs:
 
   generate:
   
-    name: Generate Tag Version
+    name: Generate Tags
     runs-on: ubuntu-latest
     outputs:
       release_version: ${{ steps.set_release_number.outputs.release_number }}
@@ -70,7 +70,7 @@ jobs:
   
   build:
     
-    name: Build Sign and Deploy
+    name: Build and Deploy
     runs-on: ubuntu-latest    
     environment: dev    
     needs: [generate]    
@@ -81,13 +81,13 @@ jobs:
     
     steps:
     
-    - name: Preamble
+    - name: Preamble Tagged Versions
       id: preamble
       run: |
         echo "::set-output name=releasetag::${{ needs.generate.outputs.release_version }}"
         echo "::set-output name=previoustag::${{ needs.generate.outputs.previous_version }}"
         
-    - name: Checkout Repository      
+    - name: Checkout Repository
       uses: actions/checkout@v3
         
     - name: Setup Docker Image Builder
@@ -106,11 +106,10 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}      
             
-    - name: Build Compose Images
+    - name: Build and Push Images
       env: 
         IMAGE_TAG: ${{ steps.preamble.outputs.releasetag }}
-      run: IMAGE_TAG=${{env.IMAGE_TAG }} docker compose -f compose.yaml build
+      run: |
+        IMAGE_TAG=${{env.IMAGE_TAG }} docker compose -f compose.yaml build
+        IMAGE_TAG=${{env.IMAGE_TAG }} docker compose -f compose.yaml push
      
-    - name: Push image to Container Registry
-      run: docker compose -f compose.yaml push
-
