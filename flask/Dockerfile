@@ -1,4 +1,4 @@
-FROM 2deviate/alpine-pandas:v1.0
+FROM 2deviate/alpine-pandas:latest
 
 USER root
 
