@@ -37,6 +37,7 @@ from email_validator import validate_email, EmailNotValidError
 
 from xlsxwriter.utility import xl_cell_to_rowcol, xl_rowcol_to_cell
 
+SOGEA_BASE = 30.05
 
 logger = logging.getLogger(__name__)
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -135,6 +136,11 @@ class ExcelFormatter(object):
             cell_ref = xl_rowcol_to_cell(row, start_column)
             self.worksheet.write_array_formula(cell_ref, cell_formula, cell_obj.format)
 
+    def set_merge(self, xrange, content, format):
+        formatter = self.workbook.add_format({"format": format})
+        self.worksheet.merge_range(xrange, content, formatter)
+
+
     @staticmethod
     def format(formatter):
         dt0 = datetime.date.today()
@@ -158,6 +164,8 @@ class ExcelFormatter(object):
         formatter.set_background_color("I1:I1", "#E2EFDA")
         formatter.set_background_color("R1:R1", "#C6E0B4")
         formatter.set_background_color("AA1:AA1", "#A9D08E")
+        formatter.set_format(f"I5:AI{5+formatter.rows-3}","£#,##0.00")
+        #formatter.set_merge("", {'border': 1, 'align': 'center', 'valign': 'vcenter'})
         formatter.set_zoom(75)
 
 
@@ -565,7 +573,7 @@ async def process_notification(notification, dry_run):
         # aggregates
         count = len(df)
         pangea = df.sum().groupby(level=0).min().sum()
-        sogea = count * 30.0
+        sogea = count * SOGEA_BASE
         attachment = {'pangea': "{:,.2f}".format(pangea), 'sogea': "{:,.2f}".format(sogea), 'count': count, 'df': df}
         # setup mail
         from_addr = email_from_address
