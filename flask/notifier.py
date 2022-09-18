@@ -76,9 +76,10 @@ excel_template_schema = None
 class ExcelFormatter(object):
     """Simple Excel Formatter Class"""
 
-    def __init__(self, workbook, worksheet) -> None:
+    def __init__(self, workbook, worksheet, df) -> None:
         self.workbook = workbook
         self.worksheet = worksheet
+        self.df = df
 
     @property
     def rows(self):
@@ -120,7 +121,7 @@ class ExcelFormatter(object):
         self.worksheet.set_zoom(zoom)
 
     def set_format(self, xrange, format):
-        formatter = self.workbook.add_format({"num_format": format})
+        formatter = self.workbook.add_format(format)
         self.worksheet.set_column(xrange, None, formatter)
 
     def set_condition(self, xrange, criteria, format):
@@ -136,9 +137,9 @@ class ExcelFormatter(object):
             cell_ref = xl_rowcol_to_cell(row, start_column)
             self.worksheet.write_array_formula(cell_ref, cell_formula, cell_obj.format)
 
-    def set_merge(self, xrange, content, format):
-        formatter = self.workbook.add_format({"format": format})
-        self.worksheet.merge_range(xrange, content, formatter)
+    def set_merge(self, xrange, cell_value, format):
+        formatter = self.workbook.add_format(format)
+        self.worksheet.merge_range(xrange, cell_value, formatter)
 
 
     @staticmethod
@@ -146,26 +147,38 @@ class ExcelFormatter(object):
         dt0 = datetime.date.today()
         dt1 = dt0 + datetime.timedelta(days=60)
         dt2 = datetime.date.today() + datetime.timedelta(days=90)
-        formatter.set_formula(f"H5:H{5+formatter.rows}", '=IF({cell_value}>0.0,{cell_value},"Unlimited")')
-        formatter.set_condition(f"F5:F{5+formatter.rows-4}",{"type": "date", "criteria": "between", "minimum": dt0, "maximum": dt1},{"bg_color": "#FFC7CE"},)
-        formatter.set_condition(f"F5:F{5+formatter.rows-4}",{"type": "date", "criteria": "between", "minimum": dt1, "maximum": dt2},{"bg_color": "#FFEB9C"},)
-        formatter.set_border("H1:H1", {"bottom": 0, "top": 0, "left": 0, "right": 1, "style": 1})
-        formatter.set_border("H2:H2", {"bottom": 0, "top": 0, "left": 0, "right": 1, "style": 1})
-        formatter.set_border("H3:H3", {"bottom": 1, "top": 0, "left": 0, "right": 1, "style": 1})
-        formatter.set_width("A:A", 15)
-        formatter.set_width("B:B", 20)
-        formatter.set_width("C:C", 22)
-        formatter.set_width("D:D", 20)
-        formatter.set_width("E:E", 25)
+        df = formatter.df
+        formatter.set_formula(f"I5:I{5+formatter.rows}", '=IF({cell_value}>0.0,{cell_value},"Unlimited")')
+        formatter.set_condition(f"G5:G{5+formatter.rows-4}",{"type": "date", "criteria": "between", "minimum": dt0, "maximum": dt1},{"bg_color": "#FFC7CE"},)
+        formatter.set_condition(f"G5:G{5+formatter.rows-4}",{"type": "date", "criteria": "between", "minimum": dt1, "maximum": dt2},{"bg_color": "#FFEB9C"},)
+        formatter.set_border("I1:I1", {"bottom": 0, "top": 0, "left": 0, "right": 1, "style": 1})
+        formatter.set_border("I2:I2", {"bottom": 0, "top": 0, "left": 0, "right": 1, "style": 1})
+        formatter.set_border("I3:I3", {"bottom": 0, "top": 0, "left": 0, "right": 1, "style": 1})
+        formatter.set_border("A1:H4", {"bottom": 0, "top": 0, "left": 0, "right": 0, "style": 1})
+        formatter.set_width("A:A", 0)
+        formatter.set_width("B:B", 15)
+        formatter.set_width("C:C", 15)
+        formatter.set_width("D:D", 15)
+        formatter.set_width("E:E", 15)
         formatter.set_width("F:F", 25)
-        formatter.set_width("G:G", 25)
-        formatter.set_width("H:H", 18)
-        formatter.set_width("I:AI", 7)
-        formatter.set_background_color("I1:I1", "#E2EFDA")
-        formatter.set_background_color("R1:R1", "#C6E0B4")
-        formatter.set_background_color("AA1:AA1", "#A9D08E")
-        formatter.set_format(f"I5:AI{5+formatter.rows-3}","£#,##0.00")
-        #formatter.set_merge("", {'border': 1, 'align': 'center', 'valign': 'vcenter'})
+        formatter.set_width("G:G", 22)
+        formatter.set_width("H:H", 25)        
+        formatter.set_width("J:AJ", 7)
+        formatter.set_background_color("J1:J1", "#E2EFDA")
+        formatter.set_background_color("S1:S1", "#C6E0B4")
+        formatter.set_background_color("AB1:AB1", "#A9D08E")
+        formatter.set_format(f"J5:AJ{5+formatter.rows-3}", {"num_format": "£#,##0.00"})
+        formatter.set_merge("A1:A4", "Row", {"bold": 1, "border": 0, "align": "center", "valign": "vcenter"})
+        formatter.set_merge("B1:B4", df.columns[0][0], {"bold": 1, "border": 0, "align": "center", "valign": "vcenter"})
+        formatter.set_merge("C1:C4", df.columns[1][0], {"bold": 1, "border": 0, "align": "center", "valign": "vcenter"})
+        formatter.set_merge("D1:D4", df.columns[2][0], {"bold": 1, "border": 0, "align": "center", "valign": "vcenter"})
+        formatter.set_merge("E1:E4", df.columns[3][0], {"bold": 1, "border": 0, "align": "center", "valign": "vcenter"})
+        formatter.set_merge("F1:F4", df.columns[4][0], {"bold": 1, "border": 0, "align": "center", "valign": "vcenter"})
+        formatter.set_merge("G1:G4", df.columns[5][0], {"bold": 1, "border": 0, "align": "center", "valign": "vcenter"})
+        formatter.set_merge("H1:H4", df.columns[6][0], {"bold": 1, "border": 0, "align": "center", "valign": "vcenter"})
+        formatter.set_merge("I1:I4", df.columns[7][0], {"bold": 1, "border": 0, "align": "center", "valign": "vcenter"})
+        formatter.set_format(f"I5:I{5+formatter.rows-4}", {"align": "center"})
+        formatter.set_width("I:I", 25)
         formatter.set_zoom(75)
 
 
@@ -249,7 +262,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, attachment):
         workbook = writer.book
         worksheet = writer.sheets["Sales Planner"]
         # format sheet
-        formatter = ExcelFormatter(workbook, worksheet)
+        formatter = ExcelFormatter(workbook, worksheet, df)
         ExcelFormatter.format(formatter)
         # save excel
         writer.save()
@@ -519,7 +532,7 @@ async def process_notification(notification, dry_run):
             email_template_schema["product_category"],
             email_template_schema["product_term"],
         ]
-        single_level_index = [
+        single_level_index = [        
             email_template_schema["cli"],
             email_template_schema["site_postcode"],
             email_template_schema["exchange_name"],
@@ -574,6 +587,12 @@ async def process_notification(notification, dry_run):
         count = len(df)
         pangea = df.sum().groupby(level=0).min().sum()
         sogea = count * SOGEA_BASE
+        #PAN-43. Fix Excel merge cells (keys on pivot table)        
+        df.reset_index(inplace=True)        
+        #PAN-42. End
+        # on sheet formatting
+        df.columns.names = (None, None, None)  # reset multi-level index names
+        #setup attachment
         attachment = {'pangea': "{:,.2f}".format(pangea), 'sogea': "{:,.2f}".format(sogea), 'count': count, 'df': df}
         # setup mail
         from_addr = email_from_address
