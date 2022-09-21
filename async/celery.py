@@ -20,5 +20,8 @@ app.conf.update(
     result_expires=3600,
 )
 
+
 if __name__ == '__main__':
     app.start()
+
+#celery -A async worker -l INFO
