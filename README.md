@@ -59,7 +59,7 @@ In this example a t2.micro aws EC2 instance is setup via the EC2 dashboard.  See
 ### Setup environment variable (*DEBUG PURPOSES ONLY)
     All environment variables are provided in a single file, .env.<<environment>> e.g. .env.dev
     
-    IMAGE_TAG                       - Version
+    IMAGE_TAG                       - Docker image version
     LOGFILENAME                     - log file name for application (web)
     LOGLEVEL                        - logging level 
     FLASK_APP                       - Flask (www) Application Name
