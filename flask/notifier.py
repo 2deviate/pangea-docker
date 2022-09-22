@@ -234,7 +234,7 @@ def send_mail(from_addr, to_addrs, cc_addrs, bcc_addrs, attachment):
     msg_mixed.attach(msg_alternative)
 
     # This example assumes the image is in the current directory
-    imamge_content_path = os.path.join(dir_path, "app/static/img/", "pangea.jpg")
+    imamge_content_path = os.path.join(dir_path, "app/static/img/", "pangea-163x50.png")
     with open(imamge_content_path, 'rb') as imgfil:
         image_content = imgfil.read()
         if image_content:
